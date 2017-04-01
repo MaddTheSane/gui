@@ -117,7 +117,7 @@
 - (id)initWithModelUnarchiver:(GMUnarchiver*)unarchiver
 {
   id array = [unarchiver decodeArrayWithName:@"elements"];
-  int i, count;
+  NSInteger i, count;
 
   for (i = 0, count = [array count]; i < count; i++)
     [self addObject:[array objectAtIndex:i]];
