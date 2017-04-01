@@ -219,7 +219,9 @@ typedef struct _GSWindowTemplateFlags
 {
   NSString *_className;
   NSString *_extension;
+#ifndef NeXT_RUNTIME
   NSView *_superview;
+#endif
   NSView *_view;
 }
 - (void) setClassName: (NSString *)name;
