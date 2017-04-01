@@ -379,7 +379,7 @@
 - (id) encodeArray: (NSArray*)array withName: (NSString*)name
 {
   if (array) {
-    int i, count = [array count];
+    NSInteger i, count = [array count];
     NSMutableArray* description = [NSMutableArray arrayWithCapacity: count];
 
     for (i = 0; i < count; i++) {

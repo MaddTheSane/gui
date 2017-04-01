@@ -142,7 +142,7 @@ BOOL _fileOwnerDecoded = NO;
 
 - (void)_makeConnections
 {
-  int i, count;
+  NSInteger i, count;
 
 #ifdef __APPLE__
   [connections makeObjectsPerformSelector:@selector(establishConnection)];

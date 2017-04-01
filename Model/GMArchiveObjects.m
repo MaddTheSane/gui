@@ -41,6 +41,7 @@
 #include <Foundation/NSData.h>
 #endif
 
+#include "GMArchiver.h"
 
 @implementation NSObject (ModelArchivingMethods)
 - (id)replacementObjectForModelArchiver:(GMArchiver*)archiver
