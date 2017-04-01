@@ -612,7 +612,7 @@ static NSMutableDictionary* classToAliasMappings = nil;
 
 + (id) unarchiverWithContentsOfFile: (NSString*)path
 {
-  id plist = [[NSString stringWithContentsOfFile: path] propertyList];
+  id plist = [[NSString stringWithContentsOfFile: path usedEncoding: NULL error: NULL] propertyList];
   GMUnarchiver* unarchiver;
 
   if (!plist)
@@ -834,7 +834,7 @@ static NSMutableDictionary* classToAliasMappings = nil;
 - (NSArray*) decodeArrayWithName: (NSString*)name
 {
   id array, decodedArray;
-  int i, count;
+  NSInteger i, count;
 
   if (!name)
     return nil;

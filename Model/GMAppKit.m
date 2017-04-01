@@ -43,7 +43,7 @@ void __dummy_GMAppKit_functionForLinking() {}
 #ifndef GNU_GUI_LIBRARY
   NSArray* windows1 = [self windows];
   NSMutableArray* windows2 = [NSMutableArray array];
-  int i, count = [windows1 count];
+  NSInteger i, count = [windows1 count];
 
   for (i = 0; i < count; i++) {
     NSWindow* window = [windows1 objectAtIndex:i];
@@ -946,7 +946,7 @@ extern id _nibOwner;
 
 - (id)initWithModelUnarchiver:(GMUnarchiver*)unarchiver
 {
-  int i, count;
+  NSInteger i, count;
   NSMutableArray* decodedItems;
 
   decodedItems = [unarchiver decodeObjectWithName: @"itemArray"];

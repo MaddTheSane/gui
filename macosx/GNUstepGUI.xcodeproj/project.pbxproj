@@ -62,6 +62,8 @@
 		554D9A121E90489300E79BFA /* IMLoading.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A101E90489300E79BFA /* IMLoading.m */; };
 		554D9A151E904A9700E79BFA /* GNUstepBase.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 554D9A141E904A9700E79BFA /* GNUstepBase.framework */; };
 		554D9A1D1E904ABC00E79BFA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 554D9A1C1E904ABC00E79BFA /* Cocoa.framework */; };
+		554D9A201E904C5A00E79BFA /* IMConnectors.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D9A1E1E904C5A00E79BFA /* IMConnectors.h */; };
+		554D9A211E904C5A00E79BFA /* IMConnectors.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A1F1E904C5A00E79BFA /* IMConnectors.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -127,6 +129,8 @@
 		554D9A181E904AB200E79BFA /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		554D9A191E904AB200E79BFA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		554D9A1C1E904ABC00E79BFA /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		554D9A1E1E904C5A00E79BFA /* IMConnectors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IMConnectors.h; sourceTree = "<group>"; };
+		554D9A1F1E904C5A00E79BFA /* IMConnectors.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IMConnectors.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -239,11 +243,13 @@
 		554D9A0E1E90482F00E79BFA /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				554D9A0F1E90489300E79BFA /* IMCustomObject.m */,
-				554D9A101E90489300E79BFA /* IMLoading.m */,
 				554D9A081E90481C00E79BFA /* GMAppKit.m */,
 				554D9A091E90481C00E79BFA /* GMArchiveObjects.m */,
 				554D9A0A1E90481C00E79BFA /* GMArchiver.m */,
+				554D9A1E1E904C5A00E79BFA /* IMConnectors.h */,
+				554D9A1F1E904C5A00E79BFA /* IMConnectors.m */,
+				554D9A0F1E90489300E79BFA /* IMCustomObject.m */,
+				554D9A101E90489300E79BFA /* IMLoading.m */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -271,6 +277,7 @@
 				554D99EB1E903EAB00E79BFA /* GSPasteboardServer.h in Headers */,
 				554D99E11E903EAB00E79BFA /* GSImageMagickImageRep.h in Headers */,
 				554D99EE1E903EAB00E79BFA /* GSPrintOperation.h in Headers */,
+				554D9A201E904C5A00E79BFA /* IMConnectors.h in Headers */,
 				554D99D61E903EAB00E79BFA /* GSCharacterPanel.h in Headers */,
 				554D9A021E903EAB00E79BFA /* IMLoading.h in Headers */,
 				554D99E61E903EAB00E79BFA /* GSMemoryPanel.h in Headers */,
@@ -387,6 +394,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				554D9A0B1E90481C00E79BFA /* GMAppKit.m in Sources */,
+				554D9A211E904C5A00E79BFA /* IMConnectors.m in Sources */,
 				554D9A0D1E90481C00E79BFA /* GMArchiver.m in Sources */,
 				554D9A0C1E90481C00E79BFA /* GMArchiveObjects.m in Sources */,
 				554D9A121E90489300E79BFA /* IMLoading.m in Sources */,
@@ -510,6 +518,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.gnustep.GNUstepGUI;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				WARNING_CFLAGS = "-Wno-objc-designated-initializers";
 			};
 			name = Debug;
 		};
@@ -533,6 +542,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.gnustep.GNUstepGUI;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				WARNING_CFLAGS = "-Wno-objc-designated-initializers";
 			};
 			name = Release;
 		};

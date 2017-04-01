@@ -37,6 +37,7 @@
 #include "GNUstepGUI/GMArchiver.h"
 #include "GNUstepGUI/IMLoading.h"
 #include "GNUstepGUI/IMCustomObject.h"
+#include "GNUstepGUI/IMConnectors.h"
 
 /* For awakeFromNib */
 #include <AppKit/NSNibLoading.h>
