@@ -12,10 +12,7 @@
 		554D99D41E903EAB00E79BFA /* GMArchiver.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99A21E903EAB00E79BFA /* GMArchiver.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99D51E903EAB00E79BFA /* GSAnimator.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99A31E903EAB00E79BFA /* GSAnimator.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99D61E903EAB00E79BFA /* GSCharacterPanel.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99A41E903EAB00E79BFA /* GSCharacterPanel.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		554D99D71E903EAB00E79BFA /* GSDisplayServer.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99A51E903EAB00E79BFA /* GSDisplayServer.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		554D99D81E903EAB00E79BFA /* GSDragView.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99A61E903EAB00E79BFA /* GSDragView.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99D91E903EAB00E79BFA /* GSEPSPrintOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99A71E903EAB00E79BFA /* GSEPSPrintOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		554D99DA1E903EAB00E79BFA /* GSFontInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99A81E903EAB00E79BFA /* GSFontInfo.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99DB1E903EAB00E79BFA /* GSGhostscriptImageRep.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99A91E903EAB00E79BFA /* GSGhostscriptImageRep.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99DC1E903EAB00E79BFA /* GSGormLoading.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99AA1E903EAB00E79BFA /* GSGormLoading.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99DD1E903EAB00E79BFA /* GSHbox.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99AB1E903EAB00E79BFA /* GSHbox.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -25,10 +22,7 @@
 		554D99E11E903EAB00E79BFA /* GSImageMagickImageRep.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99AF1E903EAB00E79BFA /* GSImageMagickImageRep.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99E21E903EAB00E79BFA /* GSInfoPanel.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99B01E903EAB00E79BFA /* GSInfoPanel.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99E31E903EAB00E79BFA /* GSInstantiator.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99B11E903EAB00E79BFA /* GSInstantiator.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		554D99E41E903EAB00E79BFA /* GSLayoutManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99B21E903EAB00E79BFA /* GSLayoutManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		554D99E51E903EAB00E79BFA /* GSLayoutManager_internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99B31E903EAB00E79BFA /* GSLayoutManager_internal.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99E61E903EAB00E79BFA /* GSMemoryPanel.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99B41E903EAB00E79BFA /* GSMemoryPanel.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		554D99E71E903EAB00E79BFA /* GSMethodTable.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99B51E903EAB00E79BFA /* GSMethodTable.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99E81E903EAB00E79BFA /* GSModelLoaderFactory.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99B61E903EAB00E79BFA /* GSModelLoaderFactory.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99E91E903EAB00E79BFA /* GSNibContainer.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99B71E903EAB00E79BFA /* GSNibContainer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99EA1E903EAB00E79BFA /* GSNibLoading.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99B81E903EAB00E79BFA /* GSNibLoading.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -37,11 +31,8 @@
 		554D99ED1E903EAB00E79BFA /* GSPrinting.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99BB1E903EAB00E79BFA /* GSPrinting.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99EE1E903EAB00E79BFA /* GSPrintOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99BC1E903EAB00E79BFA /* GSPrintOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99EF1E903EAB00E79BFA /* GSServicesManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99BD1E903EAB00E79BFA /* GSServicesManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		554D99F01E903EAB00E79BFA /* GSSoundSink.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99BE1E903EAB00E79BFA /* GSSoundSink.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		554D99F11E903EAB00E79BFA /* GSSoundSource.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99BF1E903EAB00E79BFA /* GSSoundSource.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99F21E903EAB00E79BFA /* GSTable.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99C01E903EAB00E79BFA /* GSTable.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99F31E903EAB00E79BFA /* GSTextConverter.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99C11E903EAB00E79BFA /* GSTextConverter.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		554D99F41E903EAB00E79BFA /* GSTheme.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99C21E903EAB00E79BFA /* GSTheme.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99F51E903EAB00E79BFA /* GSTitleView.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99C31E903EAB00E79BFA /* GSTitleView.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99F61E903EAB00E79BFA /* GSToolbarView.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99C41E903EAB00E79BFA /* GSToolbarView.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99F71E903EAB00E79BFA /* GSTrackingRect.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99C51E903EAB00E79BFA /* GSTrackingRect.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -332,39 +323,30 @@
 				554D99E31E903EAB00E79BFA /* GSInstantiator.h in Headers */,
 				554D9A011E903EAB00E79BFA /* IMCustomObject.h in Headers */,
 				554D99F91E903EAB00E79BFA /* GSVbox.h in Headers */,
-				554D99E51E903EAB00E79BFA /* GSLayoutManager_internal.h in Headers */,
 				554D99DD1E903EAB00E79BFA /* GSHbox.h in Headers */,
 				554D99DF1E903EAB00E79BFA /* GSHelpManagerPanel.h in Headers */,
 				554D99F51E903EAB00E79BFA /* GSTitleView.h in Headers */,
 				554D99DE1E903EAB00E79BFA /* GSHelpAttachment.h in Headers */,
-				554D99E41E903EAB00E79BFA /* GSLayoutManager.h in Headers */,
-				554D99D81E903EAB00E79BFA /* GSDragView.h in Headers */,
 				559D48D51E90BEA4003E1A48 /* GSXibKeyedUnarchiver.h in Headers */,
 				554D99D41E903EAB00E79BFA /* GMArchiver.h in Headers */,
 				554D99D91E903EAB00E79BFA /* GSEPSPrintOperation.h in Headers */,
 				554D99E91E903EAB00E79BFA /* GSNibContainer.h in Headers */,
 				554D99F61E903EAB00E79BFA /* GSToolbarView.h in Headers */,
-				554D99D71E903EAB00E79BFA /* GSDisplayServer.h in Headers */,
-				554D99F41E903EAB00E79BFA /* GSTheme.h in Headers */,
 				554D99EF1E903EAB00E79BFA /* GSServicesManager.h in Headers */,
 				554D9A671E9084BF00E79BFA /* NSView+GSExtensions.h in Headers */,
 				554D99FB1E903EAB00E79BFA /* GSWindowDecorationView.h in Headers */,
 				554D99ED1E903EAB00E79BFA /* GSPrinting.h in Headers */,
 				554D99EC1E903EAB00E79BFA /* GSPDFPrintOperation.h in Headers */,
 				554D99F31E903EAB00E79BFA /* GSTextConverter.h in Headers */,
-				554D99F01E903EAB00E79BFA /* GSSoundSink.h in Headers */,
 				554D99FE1E903EAB00E79BFA /* GSXibObjectContainer.h in Headers */,
 				554D99F81E903EAB00E79BFA /* GSTypesetter.h in Headers */,
-				554D99DA1E903EAB00E79BFA /* GSFontInfo.h in Headers */,
 				554D99FC1E903EAB00E79BFA /* GSXibElement.h in Headers */,
 				554D99E81E903EAB00E79BFA /* GSModelLoaderFactory.h in Headers */,
 				554D99391E903B5200E79BFA /* GNUstepGUI.h in Headers */,
 				554D99E01E903EAB00E79BFA /* GSHorizontalTypesetter.h in Headers */,
 				554D99DB1E903EAB00E79BFA /* GSGhostscriptImageRep.h in Headers */,
 				554D99FD1E903EAB00E79BFA /* GSXibLoading.h in Headers */,
-				554D99F11E903EAB00E79BFA /* GSSoundSource.h in Headers */,
 				554D99E21E903EAB00E79BFA /* GSInfoPanel.h in Headers */,
-				554D99E71E903EAB00E79BFA /* GSMethodTable.h in Headers */,
 				554D99EA1E903EAB00E79BFA /* GSNibLoading.h in Headers */,
 				554D99D31E903EAB00E79BFA /* GMAppKit.h in Headers */,
 				554D99D51E903EAB00E79BFA /* GSAnimator.h in Headers */,
