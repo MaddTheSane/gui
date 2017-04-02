@@ -47,7 +47,6 @@
 		554D9A011E903EAB00E79BFA /* IMCustomObject.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99CF1E903EAB00E79BFA /* IMCustomObject.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D9A021E903EAB00E79BFA /* IMLoading.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99D01E903EAB00E79BFA /* IMLoading.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D9A0B1E90481C00E79BFA /* GMAppKit.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A081E90481C00E79BFA /* GMAppKit.m */; };
-		554D9A0C1E90481C00E79BFA /* GMArchiveObjects.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A091E90481C00E79BFA /* GMArchiveObjects.m */; };
 		554D9A0D1E90481C00E79BFA /* GMArchiver.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A0A1E90481C00E79BFA /* GMArchiver.m */; };
 		554D9A111E90489300E79BFA /* IMCustomObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A0F1E90489300E79BFA /* IMCustomObject.m */; };
 		554D9A121E90489300E79BFA /* IMLoading.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A101E90489300E79BFA /* IMLoading.m */; };
@@ -427,7 +426,6 @@
 				554D9A0B1E90481C00E79BFA /* GMAppKit.m in Sources */,
 				554D9A211E904C5A00E79BFA /* IMConnectors.m in Sources */,
 				554D9A0D1E90481C00E79BFA /* GMArchiver.m in Sources */,
-				554D9A0C1E90481C00E79BFA /* GMArchiveObjects.m in Sources */,
 				554D9A561E90784000E79BFA /* GSNibLoader.m in Sources */,
 				554D9A681E9084BF00E79BFA /* NSView+GSExtensions.m in Sources */,
 				559D48D81E90BF57003E1A48 /* GSTable.m in Sources */,
