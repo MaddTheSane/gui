@@ -28,6 +28,10 @@
 #import <Foundation/NSDebug.h>
 #import "GNUstepGUI/GMAppKit.h"
 
+#ifdef NeXT_RUNTIME
+#import <GNUstepGUI/NSView+GSExtensions.h>
+#endif
+
 #ifndef AUTORELEASE
 #define AUTORELEASE(object)	[object autorelease]
 #define RELEASE(object)		[object release]

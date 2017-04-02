@@ -42,6 +42,7 @@
 #import <AppKit/NSTextView.h>
 #import <AppKit/NSView.h>
 #import <AppKit/NSWindow.h>
+#import <AppKit/NSInterfaceStyle.h>
 
 #import "GNUstepGUI/GSNibContainer.h"
 #import "GNUstepGUI/GSInstantiator.h"
@@ -123,6 +124,7 @@ typedef struct _GSWindowTemplateFlags
  */
 @interface NSWindowTemplate : NSObject <OSXNibTemplate, NSCoding, GSNibLoading>
 {
+  @public
   NSBackingStoreType   _backingStoreType;
   NSSize               _maxSize;
   NSSize               _minSize;
