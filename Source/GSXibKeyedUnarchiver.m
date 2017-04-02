@@ -34,6 +34,8 @@
 #import "GSXibKeyedUnarchiver.h"
 #import "GNUstepGUI/GSXibElement.h"
 #import "GNUstepGUI/GSNibLoading.h"
+#import <GNUstepBase/GNUstep.h>
+#import <GNUstepBase/NSDebug+GNUstepBase.h>
 
 @implementation GSXibKeyedUnarchiver
 

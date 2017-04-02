@@ -71,6 +71,11 @@
 		554D9A641E907FE300E79BFA /* GSNibLoading.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A551E90784000E79BFA /* GSNibLoading.m */; };
 		554D9A671E9084BF00E79BFA /* NSView+GSExtensions.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D9A651E9084BF00E79BFA /* NSView+GSExtensions.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D9A681E9084BF00E79BFA /* NSView+GSExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A661E9084BF00E79BFA /* NSView+GSExtensions.m */; };
+		559D48D31E90BEA4003E1A48 /* GSVbox.m in Sources */ = {isa = PBXBuildFile; fileRef = 559D48CF1E90BEA4003E1A48 /* GSVbox.m */; };
+		559D48D41E90BEA4003E1A48 /* GSXibElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 559D48D01E90BEA4003E1A48 /* GSXibElement.m */; };
+		559D48D51E90BEA4003E1A48 /* GSXibKeyedUnarchiver.h in Headers */ = {isa = PBXBuildFile; fileRef = 559D48D11E90BEA4003E1A48 /* GSXibKeyedUnarchiver.h */; };
+		559D48D61E90BEA4003E1A48 /* GSXibKeyedUnarchiver.m in Sources */ = {isa = PBXBuildFile; fileRef = 559D48D21E90BEA4003E1A48 /* GSXibKeyedUnarchiver.m */; };
+		559D48D81E90BF57003E1A48 /* GSTable.m in Sources */ = {isa = PBXBuildFile; fileRef = 559D48D71E90BF57003E1A48 /* GSTable.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -145,6 +150,11 @@
 		554D9A5C1E907AB900E79BFA /* GSModelLoaderFactory.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GSModelLoaderFactory.m; sourceTree = "<group>"; };
 		554D9A651E9084BF00E79BFA /* NSView+GSExtensions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSView+GSExtensions.h"; sourceTree = "<group>"; };
 		554D9A661E9084BF00E79BFA /* NSView+GSExtensions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSView+GSExtensions.m"; sourceTree = "<group>"; };
+		559D48CF1E90BEA4003E1A48 /* GSVbox.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GSVbox.m; sourceTree = "<group>"; };
+		559D48D01E90BEA4003E1A48 /* GSXibElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GSXibElement.m; sourceTree = "<group>"; };
+		559D48D11E90BEA4003E1A48 /* GSXibKeyedUnarchiver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GSXibKeyedUnarchiver.h; sourceTree = "<group>"; };
+		559D48D21E90BEA4003E1A48 /* GSXibKeyedUnarchiver.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GSXibKeyedUnarchiver.m; sourceTree = "<group>"; };
+		559D48D71E90BF57003E1A48 /* GSTable.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GSTable.m; sourceTree = "<group>"; tabWidth = 8; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -167,7 +177,10 @@
 				554D9A131E904A9700E79BFA /* Frameworks */,
 				554D99351E903B5200E79BFA /* Products */,
 			);
+			indentWidth = 2;
 			sourceTree = "<group>";
+			tabWidth = 8;
+			usesTabs = 0;
 		};
 		554D99351E903B5200E79BFA /* Products */ = {
 			isa = PBXGroup;
@@ -286,6 +299,11 @@
 		554D9A531E90782500E79BFA /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				559D48D71E90BF57003E1A48 /* GSTable.m */,
+				559D48CF1E90BEA4003E1A48 /* GSVbox.m */,
+				559D48D01E90BEA4003E1A48 /* GSXibElement.m */,
+				559D48D11E90BEA4003E1A48 /* GSXibKeyedUnarchiver.h */,
+				559D48D21E90BEA4003E1A48 /* GSXibKeyedUnarchiver.m */,
 				554D9A5C1E907AB900E79BFA /* GSModelLoaderFactory.m */,
 				554D9A581E9079E000E79BFA /* GSGormLoader.m */,
 				554D9A591E9079E000E79BFA /* GSGormLoading.m */,
@@ -321,6 +339,7 @@
 				554D99DE1E903EAB00E79BFA /* GSHelpAttachment.h in Headers */,
 				554D99E41E903EAB00E79BFA /* GSLayoutManager.h in Headers */,
 				554D99D81E903EAB00E79BFA /* GSDragView.h in Headers */,
+				559D48D51E90BEA4003E1A48 /* GSXibKeyedUnarchiver.h in Headers */,
 				554D99D41E903EAB00E79BFA /* GMArchiver.h in Headers */,
 				554D99D91E903EAB00E79BFA /* GSEPSPrintOperation.h in Headers */,
 				554D99E91E903EAB00E79BFA /* GSNibContainer.h in Headers */,
@@ -429,12 +448,16 @@
 				554D9A0C1E90481C00E79BFA /* GMArchiveObjects.m in Sources */,
 				554D9A561E90784000E79BFA /* GSNibLoader.m in Sources */,
 				554D9A681E9084BF00E79BFA /* NSView+GSExtensions.m in Sources */,
+				559D48D81E90BF57003E1A48 /* GSTable.m in Sources */,
 				554D9A121E90489300E79BFA /* IMLoading.m in Sources */,
 				554D9A111E90489300E79BFA /* IMCustomObject.m in Sources */,
 				554D9A5A1E9079E000E79BFA /* GSGormLoader.m in Sources */,
 				554D9A641E907FE300E79BFA /* GSNibLoading.m in Sources */,
 				554D9A5B1E9079E000E79BFA /* GSGormLoading.m in Sources */,
+				559D48D31E90BEA4003E1A48 /* GSVbox.m in Sources */,
+				559D48D41E90BEA4003E1A48 /* GSXibElement.m in Sources */,
 				554D9A5D1E907AB900E79BFA /* GSModelLoaderFactory.m in Sources */,
+				559D48D61E90BEA4003E1A48 /* GSXibKeyedUnarchiver.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -547,6 +570,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"NeXT_RUNTIME=1",
 					"$(inherited)",
+					GNUSTEP_BASE_HAVE_LIBXML,
 				);
 				INFOPLIST_FILE = GNUstepGUI/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
@@ -571,6 +595,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"NeXT_RUNTIME=1",
 					"$(inherited)",
+					GNUSTEP_BASE_HAVE_LIBXML,
 				);
 				INFOPLIST_FILE = GNUstepGUI/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";

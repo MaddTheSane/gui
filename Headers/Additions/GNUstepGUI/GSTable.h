@@ -173,13 +173,13 @@
 */
 @interface GSTable: NSView
 {
-  int _numberOfRows;
-  int _numberOfColumns;
+  NSInteger _numberOfRows;
+  NSInteger _numberOfColumns;
   // Border around the table.
-  float _minXBorder;  
-  float _maxXBorder;
-  float _minYBorder;
-  float _maxYBorder;
+  CGFloat _minXBorder;
+  CGFloat _maxXBorder;
+  CGFloat _minYBorder;
+  CGFloat _maxYBorder;
   // We control the NSView inserted in the GSTable (which we call 
   // the prisoners) by enclosing them in jails. 
   // Each prisoner is enclosed in a jail (which is a subview under 
@@ -192,18 +192,18 @@
   BOOL *_expandColumn;
   BOOL *_expandRow;
   // Cache the total number of rows/columns which have expand set to YES 
-  int _expandingColumnNumber;
-  int _expandingRowNumber;
+  NSInteger _expandingColumnNumber;
+  NSInteger _expandingRowNumber;
   // Dimension of each column/row
-  float *_columnDimension;
-  float *_rowDimension;
+  CGFloat *_columnDimension;
+  CGFloat *_rowDimension;
   // Origin of each column/row
-  float *_columnXOrigin;
-  float *_rowYOrigin;
+  CGFloat *_columnXOrigin;
+  CGFloat *_rowYOrigin;
   // Minimum dimension each row/column is allowed to have 
   // (which is the size the jail had when first created).  
-  float *_minColumnDimension;
-  float *_minRowDimension;
+  CGFloat *_minColumnDimension;
+  CGFloat *_minRowDimension;
   // Cache the minimum size the GSTable should be resized to.
   NSSize _minimumSize;
   // YES if there is a prisoner in that GSTable position. 
@@ -217,8 +217,8 @@
 rows.  If columns or rows is negative or null, a warning
 is issued and a default of 2 is used instead.
 */
--(id) initWithNumberOfRows: (int)rows 
-           numberOfColumns: (int)columns;
+-(id) initWithNumberOfRows: (NSInteger)rows
+           numberOfColumns: (NSInteger)columns;
 
 /** Initialize with a default of 2 columns and 2 rows. */
 -(id) init;
@@ -232,24 +232,24 @@ is issued and a default of 2 is used instead.
   zero (0).  The border is simply unfilled space; it is measured in the
   GSTable coordinate system.
 */
--(void) setBorder: (float)aBorder;
+-(void) setBorder: (CGFloat)aBorder;
 /** Set the GSTable left and right borders to aBorder.  If
   aBorder is negative, the border is reset to zero.  The
   GSTable is immediately updated.
 */
--(void) setXBorder: (float)aBorder;
+-(void) setXBorder: (CGFloat)aBorder;
 /** Same as setXBorder: but set the up and bottom borders. */
--(void) setYBorder: (float)aBorder;
+-(void) setYBorder: (CGFloat)aBorder;
 /** Same as setXBorder: but set only the left border. */
--(void) setMinXBorder: (float)aBorder;
+-(void) setMinXBorder: (CGFloat)aBorder;
 /** Same as setXBorder: but set only the right border. */
--(void) setMaxXBorder: (float)aBorder;
+-(void) setMaxXBorder: (CGFloat)aBorder;
 /** Same as setXBorder: but set only the lower border (upper 
     if the GSTable is flipped). */
--(void) setMinYBorder: (float)aBorder;
+-(void) setMinYBorder: (CGFloat)aBorder;
 /** Same as setXBorder: but set only the upper border (lower 
     if the GSTable is flipped). */
--(void) setMaxYBorder: (float)aBorder;
+-(void) setMaxYBorder: (CGFloat)aBorder;
 //
 //  Adding a View. 
 //  Use these methods to put views in the GSTable. 
@@ -263,25 +263,25 @@ this will affect each view (and its margins) in the column (or row)
 according to the autoresizing mask of each view.
 */
 -(void) putView: (NSView *)aView
-	  atRow: (int)row
-	 column: (int)column;
+	  atRow: (NSInteger)row
+	 column: (NSInteger)column;
 
 /** Put aView in the GSTable, using margins as margin
 in all directions: left, right, top, bottom.
 */
 -(void) putView: (NSView *)aView
-	  atRow: (int)row
-	 column: (int)column
-    withMargins: (float)margins;
+	  atRow: (NSInteger)row
+	 column: (NSInteger)column
+    withMargins: (CGFloat)margins;
 
 /** Put aView in the GSTable, using xMargins as the
 left and right margins, and yMargins as the top and bottom
 margins. */
 -(void) putView: (NSView *)aView
-	  atRow: (int)row
-	 column: (int)column
-   withXMargins: (float)xMargins
-       yMargins: (float)yMargins;
+	  atRow: (NSInteger)row
+	 column: (NSInteger)column
+   withXMargins: (CGFloat)xMargins
+       yMargins: (CGFloat)yMargins;
 
 /** <p>Put aView in the GSTable, using the specified margins.
   The names for the margins are chosen as to be as close as possible to
@@ -310,12 +310,12 @@ margins. */
   </p>
 */
 -(void) putView: (NSView *)aView
-	  atRow: (int)row
-	 column: (int)column
- withMinXMargin: (float)minXMargin   // Left Margin 
-     maxXMargin: (float)maxXMargin   // Right Margin
-     minYMargin: (float)minYMargin   // Lower Margin (Upper if flipped)
-     maxYMargin: (float)maxYMargin;  // Upper Margin (Lower if flipped)
+	  atRow: (NSInteger)row
+	 column: (NSInteger)column
+ withMinXMargin: (CGFloat)minXMargin   // Left Margin
+     maxXMargin: (CGFloat)maxXMargin   // Right Margin
+     minYMargin: (CGFloat)minYMargin   // Lower Margin (Upper if flipped)
+     maxYMargin: (CGFloat)maxYMargin;  // Upper Margin (Lower if flipped)
 //
 // Minimum Size. 
 /** This returns the minimum size the GSTable should be resized to. 
@@ -337,10 +337,10 @@ X resizing after the table has been put in the view hierarchy
 is not supported.  
 */
 -(void) setXResizingEnabled: (BOOL)aFlag 
-		  forColumn: (int)aColumn;
+		  forColumn: (NSInteger)aColumn;
 
 /** Return whether X resizing is enabled for the column aColumn. */
--(BOOL) isXResizingEnabledForColumn: (int)aColumn;
+-(BOOL) isXResizingEnabledForColumn: (NSInteger)aColumn;
 
 /** Enable/disable Y Resizing for the row aRow 
 according to aFlag.  Note: at present, enabling/disabling 
@@ -348,10 +348,10 @@ Y resizing after the table has been put in the view hierarchy
 is not supported.
 */
 -(void) setYResizingEnabled: (BOOL)aFlag 
-		     forRow: (int)aRow;
+		     forRow: (NSInteger)aRow;
 
 /** Return whether Y resizing is enabled for the row aRow. */
--(BOOL) isYResizingEnabledForRow: (int)aRow;
+-(BOOL) isYResizingEnabledForRow: (NSInteger)aRow;
 //
 // Adding Rows and Columns
 // These should be used to add more rows and columns to the GSTable. 
@@ -373,10 +373,10 @@ is not supported.
 // Getting Row and Column Number
 //
 /** Return the number of rows in the GSTable.  */
--(int) numberOfRows;
+-(NSInteger) numberOfRows;
 
 /** Return the number of columns in the GSTable.  */
--(int) numberOfColumns;
+-(NSInteger) numberOfColumns;
 @end
 
 #endif /* _GNUstep_H_GSTable */
