@@ -26,7 +26,9 @@
    Boston, MA 02110-1301, USA.
 */ 
 
+#ifndef NeXT_RUNTIME
 #import "config.h"
+#endif
 #import <Foundation/NSArray.h>
 #import <Foundation/NSData.h>
 #import <Foundation/NSDictionary.h>
@@ -34,6 +36,9 @@
 #import <Foundation/NSException.h>
 #import <Foundation/NSFileManager.h>
 #import <Foundation/NSString.h>
+#import <GNUstepBase/GNUstep.h>
+#import <GNUstepBase/NSDebug+GNUstepBase.h>
+#import <GNUstepBase/GSObjCRuntime.h>
 
 #import "GNUstepGUI/GSModelLoaderFactory.h"
 

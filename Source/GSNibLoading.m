@@ -49,6 +49,9 @@
 #import <Foundation/NSObjCRuntime.h>
 #import <Foundation/NSSet.h>
 #import <Foundation/NSString.h>
+#import <GNUstepBase/GNUstep.h>
+#import <GNUstepBase/GSObjCRuntime.h>
+#import <GNUstepBase/NSDebug+GNUstepBase.h>
 
 #import "GNUstepGUI/GSNibLoading.h"
 #import "AppKit/NSApplication.h"
@@ -61,6 +64,15 @@
 #import "AppKit/NSToolbar.h"
 #import "GNUstepGUI/GSInstantiator.h"
 #import "GSGuiPrivate.h"
+#ifdef NeXT_RUNTIME
+#import <AppKit/NSNibControlConnector.h>
+#import <Foundation/NSByteOrder.h>
+#import <GNUstepGUI/NSView+GSExtensions.h>
+
+typedef CFByteOrder NSByteOrder;
+#define _main_menu _mainMenu
+#define _sub_views _subviews
+#endif
 
 static BOOL _isInInterfaceBuilder = NO;
 
@@ -103,6 +115,7 @@ static BOOL _isInInterfaceBuilder = NO;
 // FIXME: Why can't this be merged with setMain: ?
 - (void) _setMain: (BOOL)isMain
 {
+#ifndef NeXT_RUNTIME
   if (isMain)
     {
       NSMenuView	*oldRep;
@@ -212,6 +225,7 @@ static BOOL _isInInterfaceBuilder = NO;
       [self close];
       [[self window] setLevel: NSSubmenuWindowLevel];
     }
+#endif
 }
 @end
 
@@ -1563,12 +1577,28 @@ static BOOL _isInInterfaceBuilder = NO;
  */
 - (void) instantiateWithInstantiator: (id<GSInstantiator>)instantiator
 {
+#ifdef NeXT_RUNTIME
+  [self setSource: [instantiator instantiateObject: self.source]];
+  [self setDestination: [instantiator instantiateObject: self.destination]];
+#else
   [self setSource: [instantiator instantiateObject: _src]];
   [self setDestination: [instantiator instantiateObject: _dst]];
+#endif
 }
 
 - (id) nibInstantiate
 {
+#ifdef NeXT_RUNTIME
+  if ([self.source respondsToSelector: @selector(nibInstantiate)])
+    {
+      [self setSource: [self.source nibInstantiate]];
+    }
+  if ([self.destination respondsToSelector: @selector(nibInstantiate)])
+    {
+      [self setDestination: [self.destination nibInstantiate]];
+    }
+  return self;
+#else
   if ([_src respondsToSelector: @selector(nibInstantiate)])
     {
       [self setSource: [_src nibInstantiate]];
@@ -1578,6 +1608,7 @@ static BOOL _isInInterfaceBuilder = NO;
       [self setDestination: [_dst nibInstantiate]];
     }
   return self;
+#endif
 }
 
 @end
@@ -1591,6 +1622,16 @@ static BOOL _isInInterfaceBuilder = NO;
  */
 - (void) instantiateWithInstantiator: (id<GSInstantiator>)instantiator
 {
+#ifdef NeXT_RUNTIME
+  NSRange colonRange = [self.label rangeOfString: @":"];
+  NSUInteger location = colonRange.location;
+  
+  if (location == NSNotFound)
+    {
+      NSString *newTag = [NSString stringWithFormat: @"%@:",self.label];
+      [self setLabel: (id)newTag];
+    }
+#else
   NSRange colonRange = [_tag rangeOfString: @":"];
   NSUInteger location = colonRange.location;
   
@@ -1599,6 +1640,7 @@ static BOOL _isInInterfaceBuilder = NO;
       NSString *newTag = [NSString stringWithFormat: @"%@:",_tag];
       [self setLabel: (id)newTag];
     }
+#endif
 
   [super instantiateWithInstantiator: instantiator];
 }
@@ -2046,7 +2088,7 @@ static BOOL _isInInterfaceBuilder = NO;
 {
   NSArray *nameKeys = (NSArray *)NSAllMapTableKeys(_names);
   NSArray *nameValues = (NSArray *)NSAllMapTableValues(_names);
-  int i = [nameKeys indexOfObject: obj];
+  NSInteger i = [nameKeys indexOfObject: obj];
   NSString *result = [nameValues objectAtIndex: i];
   return result;
 }
@@ -2277,10 +2319,17 @@ static BOOL _isInInterfaceBuilder = NO;
 
 - (void) establishConnection
 {
+#ifdef NeXT_RUNTIME
+  if ([self.destination respondsToSelector: @selector(setToolTip:)])
+    {
+      [self.destination setToolTip: _marker];
+    }
+#else
   if ([_dst respondsToSelector: @selector(setToolTip:)])
     {
       [_dst setToolTip: _marker];
     }
+#endif
 }
 
 - (void) setFile: (id)file

@@ -35,6 +35,9 @@
 #import <Foundation/NSNotification.h>
 #import <Foundation/NSArchiver.h>
 #import <Foundation/NSSet.h>
+#import <GNUstepBase/GNUstep.h>
+#import <GNUstepBase/NSDebug+GNUstepBase.h>
+#import <GNUstepBase/GSObjCRuntime.h>
 #import "AppKit/NSApplication.h"
 #import "AppKit/NSControl.h"
 #import "AppKit/NSMenu.h"

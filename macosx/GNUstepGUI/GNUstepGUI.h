@@ -68,3 +68,5 @@ FOUNDATION_EXPORT const unsigned char GNUstepGUIVersionString[];
 #import <GNUstepGUI/IMCustomObject.h>
 #import <GNUstepGUI/IMLoading.h>
 
+#import <GNUstepGUI/NSView+GSExtensions.h>
+
