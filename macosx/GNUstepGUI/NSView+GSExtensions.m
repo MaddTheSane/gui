@@ -7,6 +7,7 @@
 //
 
 #import "NSView+GSExtensions.h"
+#import <GNUstepBase/GNUstepBase.h>
 
 @implementation NSView (GSExtensions)
 /**
@@ -26,4 +27,33 @@
 	[aView setNextKeyView: self];
 }
 
+- (void) removeSubview: (NSView*)aView
+{
+	id view;
+	/*
+	 * This must be first because it invokes -resignFirstResponder:,
+	 * which assumes the view is still in the view hierarchy
+	 */
+	for (view = [_window firstResponder];
+		 view != nil && [view respondsToSelector: @selector(superview)];
+		 view = [view superview])
+	{
+		if (view == aView)
+		{
+	  [_window makeFirstResponder: _window];
+	  break;
+		}
+	}
+	[self willRemoveSubview: aView];
+	aView->_superview = nil;
+	[aView viewWillMoveToWindow: nil];
+	[aView viewWillMoveToSuperview: nil];
+	[aView setNextResponder: nil];
+	RETAIN(aView);
+	[_subviews removeObjectIdenticalTo: aView];
+	[aView setNeedsDisplay: NO];
+	[aView viewDidMoveToWindow];
+	[aView viewDidMoveToSuperview];
+	RELEASE(aView);
+}
 @end

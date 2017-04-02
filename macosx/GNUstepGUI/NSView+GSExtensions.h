@@ -10,5 +10,6 @@
 
 @interface NSView (GSExtensions)
 - (void) setPreviousKeyView: (NSView *)aView;
+- (void) removeSubview: (NSView*)aView;
 
 @end
