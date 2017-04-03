@@ -25,7 +25,6 @@
 		554D99E61E903EAB00E79BFA /* GSMemoryPanel.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99B41E903EAB00E79BFA /* GSMemoryPanel.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99E81E903EAB00E79BFA /* GSModelLoaderFactory.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99B61E903EAB00E79BFA /* GSModelLoaderFactory.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99E91E903EAB00E79BFA /* GSNibContainer.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99B71E903EAB00E79BFA /* GSNibContainer.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		554D99EA1E903EAB00E79BFA /* GSNibLoading.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99B81E903EAB00E79BFA /* GSNibLoading.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99EB1E903EAB00E79BFA /* GSPasteboardServer.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99B91E903EAB00E79BFA /* GSPasteboardServer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99EC1E903EAB00E79BFA /* GSPDFPrintOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99BA1E903EAB00E79BFA /* GSPDFPrintOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D99ED1E903EAB00E79BFA /* GSPrinting.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99BB1E903EAB00E79BFA /* GSPrinting.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -54,17 +53,14 @@
 		554D9A1D1E904ABC00E79BFA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 554D9A1C1E904ABC00E79BFA /* Cocoa.framework */; };
 		554D9A201E904C5A00E79BFA /* IMConnectors.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D9A1E1E904C5A00E79BFA /* IMConnectors.h */; };
 		554D9A211E904C5A00E79BFA /* IMConnectors.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A1F1E904C5A00E79BFA /* IMConnectors.m */; };
-		554D9A561E90784000E79BFA /* GSNibLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A541E90784000E79BFA /* GSNibLoader.m */; };
 		554D9A5A1E9079E000E79BFA /* GSGormLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A581E9079E000E79BFA /* GSGormLoader.m */; };
 		554D9A5B1E9079E000E79BFA /* GSGormLoading.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A591E9079E000E79BFA /* GSGormLoading.m */; };
 		554D9A5D1E907AB900E79BFA /* GSModelLoaderFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A5C1E907AB900E79BFA /* GSModelLoaderFactory.m */; };
-		554D9A641E907FE300E79BFA /* GSNibLoading.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A551E90784000E79BFA /* GSNibLoading.m */; };
 		554D9A671E9084BF00E79BFA /* NSView+GSExtensions.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D9A651E9084BF00E79BFA /* NSView+GSExtensions.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554D9A681E9084BF00E79BFA /* NSView+GSExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = 554D9A661E9084BF00E79BFA /* NSView+GSExtensions.m */; };
 		559D48D31E90BEA4003E1A48 /* GSVbox.m in Sources */ = {isa = PBXBuildFile; fileRef = 559D48CF1E90BEA4003E1A48 /* GSVbox.m */; };
 		559D48D41E90BEA4003E1A48 /* GSXibElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 559D48D01E90BEA4003E1A48 /* GSXibElement.m */; };
 		559D48D51E90BEA4003E1A48 /* GSXibKeyedUnarchiver.h in Headers */ = {isa = PBXBuildFile; fileRef = 559D48D11E90BEA4003E1A48 /* GSXibKeyedUnarchiver.h */; };
-		559D48D61E90BEA4003E1A48 /* GSXibKeyedUnarchiver.m in Sources */ = {isa = PBXBuildFile; fileRef = 559D48D21E90BEA4003E1A48 /* GSXibKeyedUnarchiver.m */; };
 		559D48D81E90BF57003E1A48 /* GSTable.m in Sources */ = {isa = PBXBuildFile; fileRef = 559D48D71E90BF57003E1A48 /* GSTable.m */; };
 /* End PBXBuildFile section */
 
@@ -346,7 +342,6 @@
 				554D99DB1E903EAB00E79BFA /* GSGhostscriptImageRep.h in Headers */,
 				554D99FD1E903EAB00E79BFA /* GSXibLoading.h in Headers */,
 				554D99E21E903EAB00E79BFA /* GSInfoPanel.h in Headers */,
-				554D99EA1E903EAB00E79BFA /* GSNibLoading.h in Headers */,
 				554D99D31E903EAB00E79BFA /* GMAppKit.h in Headers */,
 				554D99D51E903EAB00E79BFA /* GSAnimator.h in Headers */,
 				554D99DC1E903EAB00E79BFA /* GSGormLoading.h in Headers */,
@@ -426,18 +421,15 @@
 				554D9A0B1E90481C00E79BFA /* GMAppKit.m in Sources */,
 				554D9A211E904C5A00E79BFA /* IMConnectors.m in Sources */,
 				554D9A0D1E90481C00E79BFA /* GMArchiver.m in Sources */,
-				554D9A561E90784000E79BFA /* GSNibLoader.m in Sources */,
 				554D9A681E9084BF00E79BFA /* NSView+GSExtensions.m in Sources */,
 				559D48D81E90BF57003E1A48 /* GSTable.m in Sources */,
 				554D9A121E90489300E79BFA /* IMLoading.m in Sources */,
 				554D9A111E90489300E79BFA /* IMCustomObject.m in Sources */,
 				554D9A5A1E9079E000E79BFA /* GSGormLoader.m in Sources */,
-				554D9A641E907FE300E79BFA /* GSNibLoading.m in Sources */,
 				554D9A5B1E9079E000E79BFA /* GSGormLoading.m in Sources */,
 				559D48D31E90BEA4003E1A48 /* GSVbox.m in Sources */,
 				559D48D41E90BEA4003E1A48 /* GSXibElement.m in Sources */,
 				554D9A5D1E907AB900E79BFA /* GSModelLoaderFactory.m in Sources */,
-				559D48D61E90BEA4003E1A48 /* GSXibKeyedUnarchiver.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -552,6 +544,7 @@
 					"$(inherited)",
 					GNUSTEP_BASE_HAVE_LIBXML,
 				);
+				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
 				INFOPLIST_FILE = GNUstepGUI/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
@@ -577,6 +570,7 @@
 					"$(inherited)",
 					GNUSTEP_BASE_HAVE_LIBXML,
 				);
+				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
 				INFOPLIST_FILE = GNUstepGUI/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
