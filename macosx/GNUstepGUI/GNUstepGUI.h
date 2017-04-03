@@ -19,9 +19,6 @@ FOUNDATION_EXPORT const unsigned char GNUstepGUIVersionString[];
 
 #import <GNUstepGUI/GSGormLoading.h>
 
-#import <GNUstepGUI/GSNibContainer.h>
-#import <GNUstepGUI/GSNibLoading.h>
-
 #import <GNUstepGUI/GSXibElement.h>
 #import <GNUstepGUI/GSXibLoading.h>
 #import <GNUstepGUI/GSXibParser.h>
