@@ -185,7 +185,7 @@
   // Each prisoner is enclosed in a jail (which is a subview under 
   // our control). 
   // Each prisoner is allowed to resize only inside its jail.   
-  NSView **_jails;
+  NSView *__strong* _jails;
   // YES if the column/row should be expanded/reduced when the size 
   // of the GSTable is expanded/reduced (this BOOL is otherwhere 
   // called X/Y Resizing Enabled). 
