@@ -62,6 +62,7 @@
 		559D48D41E90BEA4003E1A48 /* GSXibElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 559D48D01E90BEA4003E1A48 /* GSXibElement.m */; };
 		559D48D51E90BEA4003E1A48 /* GSXibKeyedUnarchiver.h in Headers */ = {isa = PBXBuildFile; fileRef = 559D48D11E90BEA4003E1A48 /* GSXibKeyedUnarchiver.h */; };
 		559D48D81E90BF57003E1A48 /* GSTable.m in Sources */ = {isa = PBXBuildFile; fileRef = 559D48D71E90BF57003E1A48 /* GSTable.m */; };
+		55A8D5DF1E97714600C42FB2 /* GSNibLoading.h in Headers */ = {isa = PBXBuildFile; fileRef = 554D99B81E903EAB00E79BFA /* GSNibLoading.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -341,6 +342,7 @@
 				554D99E01E903EAB00E79BFA /* GSHorizontalTypesetter.h in Headers */,
 				554D99DB1E903EAB00E79BFA /* GSGhostscriptImageRep.h in Headers */,
 				554D99FD1E903EAB00E79BFA /* GSXibLoading.h in Headers */,
+				55A8D5DF1E97714600C42FB2 /* GSNibLoading.h in Headers */,
 				554D99E21E903EAB00E79BFA /* GSInfoPanel.h in Headers */,
 				554D99D31E903EAB00E79BFA /* GMAppKit.h in Headers */,
 				554D99D51E903EAB00E79BFA /* GSAnimator.h in Headers */,

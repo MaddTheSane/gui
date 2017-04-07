@@ -28,11 +28,14 @@
 #ifndef _GNUstep_H_GSNibContainer
 #define _GNUstep_H_GSNibContainer
 
+#import <Foundation/NSObjCRuntime.h>
+
 @class	NSDictionary;
 @class	NSMutableDictionary;
 @class  NSMutableSet;
 @class  NSMutableArray;
 
+NS_SWIFT_NAME(GSNibContainerProtocol)
 @protocol GSNibContainer 
 - (void) awakeWithContext: (NSDictionary *)context;
 - (NSMutableDictionary *) nameTable;
