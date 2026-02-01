@@ -1,8 +1,11 @@
 2026-02-01 Gregory John Casamento <greg.casamento@gmail.com>
 
-	* Headers/AppKit/NSTableView.h: Add references to NSTableRowView.h for view-based rendering.
-	* Source/NSTableView.m: Refactored to support view-based rendering using NSTableRowView. Updated implementation to utilize NSTableRowView when in view-based mode.
-	* Source/GSThemeDrawing.m: Factored out NSTableView and NSOutlineView rendering logic for improved modularity.
+	* Headers/AppKit/NSTableView.h: Add references to NSTableRowView.h for 
+	view-based rendering.
+	* Source/NSTableView.m: Refactored to support view-based rendering 
+	using NSTableRowView. Updated implementation to utilize NSTableRowView when in view-based mode.
+	* Source/GSThemeDrawing.m: Factored out NSTableView and NSOutlineView 
+	rendering logic for improved modularity.
 
 2026-01-09 Richard Frith-Macdonald <rfm@gnu.org>
 
