@@ -28,10 +28,27 @@
 #define _GNUstep_H_NSViewPrivate
 
 #import "AppKit/NSView.h"
+#import "GSAutoLayoutEngine.h"
 
 @interface NSView (KeyViewLoop)
 - (void) _setUpKeyViewLoopWithNextKeyView: (NSView *)nextKeyView;
 - (void) _recursiveSetUpKeyViewLoopWithNextKeyView: (NSView *)nextKeyView;
+@end
+
+@interface NSView (__NSViewPrivateMethods__)
+- (void) _insertSubview: (NSView *)sv atIndex: (NSUInteger)idx;
+@end
+
+@interface NSView (NSConstraintBasedLayoutCorePrivateMethods)
+
+- (void) _setNeedsUpdateConstraints: (BOOL)needsUpdateConstraints;
+
+- (void) _layoutViewAndSubViews;
+
+- (GSAutoLayoutEngine*) _layoutEngine;
+
+- (void) _layoutEngineDidChangeAlignmentRect;
+
 @end
 
 #endif // _GNUstep_H_NSViewPrivate

@@ -41,19 +41,19 @@
 #import <AppKit/NSPrintOperation.h>
 #import "GSGuiPrivate.h"
 #import "GSCUPSPrintOperation.h"
+#undef __BLOCKS__
 #include <cups/cups.h>
 
 
 //A subclass of GSPrintOperation, NOT NSPrintOperation.
 @implementation GSCUPSPrintOperation
-//
-// Class methods
-//
-+ (id) allocWithZone: (NSZone*)zone
-{
-  return NSAllocateObject(self, 0, zone);
-}
 
+
+// Required because the super class redefines the default
++ (id) allocWithZone: (NSZone*)z
+{
+  return NSAllocateObject (self, 0, z);
+}
 
 - (id)initWithView:(NSView *)aView
          printInfo:(NSPrintInfo *)aPrintInfo

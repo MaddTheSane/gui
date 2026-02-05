@@ -49,12 +49,18 @@ typedef enum _NSPrintingOrientation {
   NSLandscapeOrientation
 } NSPrintingOrientation;
 
+typedef enum _NSPaperOrientation {
+  NSPaperOrientationPortrait,
+  NSPaperOrientationLandscape
+} NSPaperOrientation;
+
 typedef enum _NSPrintingPaginationMode {
   NSAutoPagination,
   NSFitPagination,
   NSClipPagination
 } NSPrintingPaginationMode;
 
+APPKIT_EXPORT_CLASS
 @interface NSPrintInfo : NSObject <NSCoding, NSCopying>
 {
   NSMutableDictionary *_info;

@@ -33,7 +33,6 @@
 #import <Foundation/NSLock.h>
 #import <Foundation/NSRunLoop.h>
 #import <Foundation/NSSet.h>
-#import <Foundation/NSThread.h>
 #import <Foundation/NSGeometry.h>
 
 #import "AppKit/NSApplication.h"
@@ -63,7 +62,7 @@ static NSMapTable *windowmaps = NULL;
 /* Lock for use when creating contexts */
 static NSRecursiveLock  *serverLock = nil;
 
-static NSString *NSCurrentServerThreadKey;
+static GSDisplayServer *currentServer = nil;
 
 /** Returns the GSDisplayServer that created the interal
     representation for window. If the internal representation has not
@@ -93,9 +92,7 @@ GSServerForWindow(NSWindow *window)
 GSDisplayServer *
 GSCurrentServer(void)
 {
-  NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
-
-  return (GSDisplayServer*) [dict objectForKey: NSCurrentServerThreadKey];
+  return currentServer;
 }
 
 /**
@@ -126,17 +123,14 @@ GSCurrentServer(void)
 {
   if (serverLock == nil)
     {
-      [gnustep_global_lock lock];
       if (serverLock == nil)
         {
           serverLock = [NSRecursiveLock new];
           _globalGSZone = NSDefaultMallocZone();
           defaultServerClass = [GSDisplayServer class];
-          NSCurrentServerThreadKey  = @"NSCurrentServerThreadKey";
           windowmaps = NSCreateMapTable(NSNonOwnedPointerMapKeyCallBacks,
                                         NSNonOwnedPointerMapValueCallBacks, 20);
         }
-      [gnustep_global_lock unlock];
     }
 }
 
@@ -199,11 +193,7 @@ GSCurrentServer(void)
 */
 + (void) setCurrentServer: (GSDisplayServer *)server
 {
-  NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
-  if (server)
-    [dict setObject: server forKey: NSCurrentServerThreadKey];
-  else
-    [dict removeObjectForKey: NSCurrentServerThreadKey];
+  ASSIGN(currentServer, server);
 }
 
 /** <init />
@@ -605,6 +595,13 @@ GSCurrentServer(void)
 - (void) miniwindow: (int) win
 {
   [self subclassResponsibility: _cmd];
+}
+
+/** Ask the window manager to hide all the application windows for us. 
+    Return whether they have been hidden. */
+- (BOOL) hideApplication: (int) win
+{
+  return NO;
 }
 
 /** Returns YES if the application should create the miniwindow counterpart

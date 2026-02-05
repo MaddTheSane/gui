@@ -31,6 +31,7 @@
 */ 
 
 #import "config.h"
+
 #import <Foundation/NSArray.h>
 #import <Foundation/NSBundle.h>
 #import <Foundation/NSDebug.h>
@@ -39,6 +40,7 @@
 #import <Foundation/NSString.h>
 #import <Foundation/NSURL.h>
 #import <Foundation/NSUserDefaults.h>
+
 #import "AppKit/NSNib.h"
 #import "AppKit/NSNibLoading.h"
 #import "GNUstepGUI/GSModelLoaderFactory.h"
@@ -110,7 +112,7 @@
       enumerator = [types objectEnumerator];
       while ((type = [enumerator nextObject]))
         {
-          NSDebugLLog(@"NIB", @"Checking type %@", fileName);
+          NSDebugLLog(@"NIB", @"Checking type %@", type);
           NSString *path = [self pathForResource: fileName
                                           ofType: type];
           if (path != nil)
@@ -154,5 +156,61 @@
       return NO;
     }
 }
+
+- (BOOL) loadNibNamed: (NSString *)aNibName
+	        owner: (id)owner
+      topLevelObjects: (NSArray **)topLevelObjects
+{
+  BOOL success = NO;
+
+  if (owner != nil && aNibName != nil)
+    {
+      NSDictionary	*table = nil;
+      NSMutableArray    *tlo = nil;
+
+      // Based on the arguments above, set up the table appropriately...
+      if (owner != nil)
+	{
+	  if (topLevelObjects != NULL)
+	    {
+	      // Here we initialize the array, it is sent in using the dictionary.
+	      // In the code below it is pulled back out and assigned to the
+	      // reference in the arguments.
+	      tlo = [NSMutableArray array];
+	      table = [NSDictionary dictionaryWithObjectsAndKeys:
+				      owner, NSNibOwner,
+				    tlo, NSNibTopLevelObjects,
+				    nil];
+	    }
+	  else
+	    {
+	      table = [NSDictionary dictionaryWithObject: owner forKey: NSNibOwner];
+	    }
+	}
+
+      // Attempt to load the model file...
+      success = [self loadNibFile: aNibName
+                      externalNameTable: table
+                         withZone: [owner zone]];
+      
+      // When using the newer topLevelObjects API, conform to the cocoa standard of letting the caller own
+      // the TLOs these were previously retained by [GSXibLoader awake:withContext:] so we need to
+      // autorelease them.  See cocoa docs for loadNibNamed:owner:topLevelObjects:
+      if (success && topLevelObjects && [table objectForKey: NSNibTopLevelObjects])
+        {
+          *topLevelObjects = [table objectForKey: NSNibTopLevelObjects];
+          NSEnumerator *en = [*topLevelObjects objectEnumerator];
+          id obj = nil;
+          
+          while ((obj = [en nextObject]) != nil)
+            {
+              AUTORELEASE(obj);
+            }
+        }
+    }
+ 
+  return success;
+}
+
 @end
 // end of NSBundleAdditions

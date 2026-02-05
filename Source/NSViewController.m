@@ -1,52 +1,57 @@
-/* 
+/*
  NSViewController.m
- 
+
  Copyright (C) 2010 Free Software Foundation, Inc.
- 
+
  Author:  David Wetzel <dave@turbocat.de>
  Date: 2010
 
  This file is part of the GNUstep GUI Library.
- 
+
  This library is free software; you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
  License as published by the Free Software Foundation; either
  version 2 of the License, or (at your option) any later version.
- 
+
  This library is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
  Lesser General Public License for more details.
- 
+
  You should have received a copy of the GNU Lesser General Public
  License along with this library; see the file COPYING.LIB.
- If not, see <http://www.gnu.org/licenses/> or write to the 
- Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+ If not, see <http://www.gnu.org/licenses/> or write to the
+ Free Software Foundation, 51 Franklin Street, Fifth Floor,
  Boston, MA 02110-1301, USA.
- */ 
+ */
 
 #import <Foundation/NSArray.h>
 #import <Foundation/NSBundle.h>
 #import <Foundation/NSKeyedArchiver.h>
 #import <Foundation/NSString.h>
+#import <Foundation/NSMapTable.h>
+
 #import "AppKit/NSKeyValueBinding.h"
 #import "AppKit/NSNib.h"
 #import "AppKit/NSView.h"
 #import "AppKit/NSViewController.h"
-
+#import "AppKit/NSStoryboardSegue.h"
+#import "AppKit/NSStoryboard.h"
+#import "AppKit/NSWindow.h"
+#import "AppKit/NSWindowController.h"
 
 @implementation NSViewController
 
-- (id)initWithNibName:(NSString *)nibNameOrNil 
-               bundle:(NSBundle *)nibBundleOrNil
+- (id)initWithNibName:(NSString *)nibNameOrNil
+	       bundle:(NSBundle *)nibBundleOrNil
 {
   self = [super init];
   if (self == nil)
     return nil;
-  
+
   ASSIGN(_nibName, nibNameOrNil);
   ASSIGN(_nibBundle, nibBundleOrNil);
-  
+
   return self;
 }
 
@@ -63,8 +68,37 @@
   DESTROY(_autounbinder);
   DESTROY(_designNibBundleIdentifier);
   DESTROY(view);
+  DESTROY(_segueMap);
 
   [super dealloc];
+}
+
+- (void)viewWillLoad
+{
+}
+
+- (void)viewDidLoad
+{
+}
+
+- (void) viewWillAppear: (BOOL)animated
+{
+}
+
+- (void) viewIsAppearing: (BOOL)animated
+{
+}
+
+- (void) viewDidAppear: (BOOL)animated
+{
+}
+
+- (void) viewWillDisappear: (BOOL)animated
+{
+}
+
+- (void) viewDidDisappear: (BOOL)animated
+{
 }
 
 - (void)setRepresentedObject:(id)representedObject
@@ -79,6 +113,11 @@
 
 - (void)setTitle:(NSString *)title
 {
+  NSWindow *w = [[self view] window];
+  if (w != nil)
+    {
+      [w setTitle: title]; // sync title with window...
+    }
   ASSIGN(_title, title);
 }
 
@@ -113,20 +152,24 @@
       return;
     }
 
+  [self viewWillLoad];
+  [self viewWillAppear: NO];
   nib = [[NSNib alloc] initWithNibNamed: [self nibName]
-                                 bundle: [self nibBundle]];
+				 bundle: [self nibBundle]];
   if ((nib != nil) && [nib instantiateNibWithOwner: self
-                                    topLevelObjects: &_topLevelObjects])
+				    topLevelObjects: &_topLevelObjects])
     {
       _vcFlags.nib_is_loaded = YES;
       // FIXME: Need to resolve possible retain cycles here
+      [self viewDidLoad];
+      [self viewDidAppear: NO];
     }
   else
     {
       if (_nibName != nil)
-        {
-	  NSLog(@"%@: could not load nib named %@.nib", 
-                [self class], _nibName);
+	{
+	  NSLog(@"%@: could not load nib named %@.nib",
+		[self class], _nibName);
 	}
     }
   RETAIN(_topLevelObjects);
@@ -143,6 +186,45 @@
   return _nibBundle;
 }
 
+// Dismiss
+- (void) dismissViewController: (NSViewController *)viewController
+{
+  [viewController viewDidDisappear: NO];
+}
+
+- (void) dismissController: (id)sender
+{
+  [self dismissViewController: self];
+}
+
+// NSSeguePerforming methods...
+- (void) performSegueWithIdentifier: (NSStoryboardSegueIdentifier)identifier
+			     sender: (id)sender
+{
+  NSStoryboardSegue *segue = [_segueMap objectForKey: identifier];
+  [self prepareForSegue: segue
+		 sender: sender];
+  [segue perform];
+}
+
+- (void) prepareForSegue: (NSStoryboardSegue *)segue
+		  sender: (id)sender
+{
+  // do nothing in base class method...
+}
+
+- (BOOL) shouldPerformSegueWithIdentifier: (NSStoryboardSegueIdentifier)identifier
+				   sender: (id)sender
+{
+  return YES;
+}
+
+- (NSString *) description
+{
+  return [NSString stringWithFormat: @"%@ - view = %@", [super description], view];
+}
+
+// NSCoding
 - (id) initWithCoder: (NSCoder *)aDecoder
 {
   self = [super initWithCoder: aDecoder];
@@ -151,6 +233,7 @@
       return nil;
     }
 
+  _segueMap = RETAIN([NSMapTable strongToWeakObjectsMapTable]);
   if ([aDecoder allowsKeyedCoding])
     {
       NSView *aView = [aDecoder decodeObjectForKey: @"NSView"];
@@ -165,7 +248,7 @@
     }
   return self;
 }
-  	 
+
 - (void) encodeWithCoder: (NSCoder *)aCoder
 {
   [super encodeWithCoder: aCoder];
@@ -179,6 +262,7 @@
       [aCoder encodeObject: [self view]];
     }
 }
+
 @end
 
 @implementation NSViewController (NSEditorRegistration)
@@ -195,9 +279,9 @@
 @end
 
 @implementation NSViewController (NSEditor)
-- (void)commitEditingWithDelegate:(id)delegate 
-                didCommitSelector:(SEL)didCommitSelector 
-                      contextInfo:(void *)contextInfo
+- (void)commitEditingWithDelegate:(id)delegate
+		didCommitSelector:(SEL)didCommitSelector
+		      contextInfo:(void *)contextInfo
 {
   // Loop over all elements of _editors
   id editor = nil;
@@ -207,11 +291,11 @@
     {
       void (*didCommit)(id, SEL, id, BOOL, void*);
 
-      didCommit = (void (*)(id, SEL, id, BOOL, void*))[delegate methodForSelector: 
+      didCommit = (void (*)(id, SEL, id, BOOL, void*))[delegate methodForSelector:
 								 didCommitSelector];
       didCommit(delegate, didCommitSelector, editor, res, contextInfo);
     }
-  
+
 }
 
 - (BOOL)commitEditing
@@ -227,5 +311,4 @@
   // Loop over all elements of _editors
   [self notImplemented: _cmd];
 }
-
 @end

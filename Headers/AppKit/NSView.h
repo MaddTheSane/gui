@@ -32,10 +32,14 @@
 
 #ifndef _GNUstep_H_NSView
 #define _GNUstep_H_NSView
-#import <GNUstepBase/GSVersionMacros.h>
+#import <AppKit/AppKitDefines.h>
 
+#import <AppKit/NSAppearance.h>
 #import <AppKit/NSGraphicsContext.h>
 #import <AppKit/NSResponder.h>
+#import <AppKit/NSUserInterfaceItemIdentification.h>
+#import <AppKit/NSUserInterfaceLayout.h>
+#import <AppKit/NSLayoutConstraint.h>
 
 @class NSArray;
 @class NSAttributedString;
@@ -52,6 +56,7 @@
 @class NSScrollView;
 @class NSView;
 @class NSWindow;
+@class NSShadow;
 
 typedef NSInteger NSTrackingRectTag;
 typedef NSInteger NSToolTipTag;
@@ -72,6 +77,31 @@ enum _NSBorderType {
 };
 typedef NSUInteger NSBorderType;
 
+typedef NSInteger NSViewLayerContentsRedrawPolicy;
+enum {
+  NSViewLayerContentsRedrawNever = 0,
+  NSViewLayerContentsRedrawOnSetNeedsDisplay = 1,
+  NSViewLayerContentsRedrawDuringViewResize = 2,
+  NSViewLayerContentsRedrawBeforeViewResize = 3,
+  NSViewLayerContentsRedrawCrossfade = 4
+};
+
+typedef NSInteger NSViewLayerContentsPlacement;
+enum {
+  NSViewLayerContentsPlacementScaleAxesIndependently = 0,
+  NSViewLayerContentsPlacementScaleProportionallyToFit = 1,
+  NSViewLayerContentsPlacementScaleProportionallyToFill = 2,
+  NSViewLayerContentsPlacementCenter = 3,
+  NSViewLayerContentsPlacementTop = 4,
+  NSViewLayerContentsPlacementTopRight = 5,
+  NSViewLayerContentsPlacementRight = 6,
+  NSViewLayerContentsPlacementBottomRight = 7,
+  NSViewLayerContentsPlacementBottom = 8,
+  NSViewLayerContentsPlacementBottomLeft = 9,
+  NSViewLayerContentsPlacementLeft = 10,
+  NSViewLayerContentsPlacementTopLeft = 11
+};
+
 /*
  * autoresize constants which NSView uses in
  * determining the parts of a view which are
@@ -86,6 +116,7 @@ enum {
   NSViewHeightSizable	= 16,	// view's height can stretch
   NSViewMaxYMargin	= 32 	// top margin between views can stretch
 };
+typedef NSUInteger NSAutoresizingMaskOptions;
 
 /*
  * constants defining if and how a view (or cell) should draw a focus ring
@@ -96,7 +127,11 @@ typedef enum _NSFocusRingType {
   NSFocusRingTypeExterior = 2
 } NSFocusRingType;
 
-@interface NSView : NSResponder
+extern const CGFloat NSViewNoInstrinsicMetric;
+extern const CGFloat NSViewNoIntrinsicMetric;
+
+APPKIT_EXPORT_CLASS
+@interface NSView : NSResponder <NSAppearanceCustomization, NSUserInterfaceItemIdentification>
 {
   NSRect _frame;
   NSRect _bounds;
@@ -104,6 +139,7 @@ typedef enum _NSFocusRingType {
   id _boundsMatrix;
   id _matrixToWindow;
   id _matrixFromWindow;
+  id _coreAnimationData;
 
   NSView* _super_view;
 PACKAGE_SCOPE
@@ -121,7 +157,7 @@ PACKAGE_SCOPE
   void *_previousKeyView;
   CGFloat _alphaValue;
 
-@public
+PACKAGE_SCOPE
   /*
    * Flags for internal use by NSView and it's subclasses.
    */
@@ -140,6 +176,7 @@ PACKAGE_SCOPE
                                         /* backing flush when drawn     */
   } _rFlags;
 
+@protected
   BOOL _is_rotated_from_base;
   BOOL _is_rotated_or_scaled_from_base;
   BOOL _post_frame_changes;
@@ -150,10 +187,20 @@ PACKAGE_SCOPE
   BOOL _renew_gstate;
   BOOL _is_hidden;
   BOOL _in_live_resize;
+  BOOL _needsLayout;
+  BOOL _needsUpdateConstraints;
+  BOOL _translatesAutoresizingMaskIntoConstraints;
+  float _contentCompressionResistancePriority;
+  GSIntrinsicContentSizePriority _huggingPriorities;
+  GSIntrinsicContentSizePriority _compressionPriorities;
 
   NSUInteger _autoresizingMask;
   NSFocusRingType _focusRingType;
   NSRect _autoresizingFrameError;
+  NSShadow *_shadow;
+  NSAppearance* _appearance;
+  NSUserInterfaceItemIdentifier _identifier;
+
 }
 
 /*
@@ -590,8 +637,125 @@ PACKAGE_SCOPE
 - (NSAttributedString *)pageHeader;
 #endif
 
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_6, GS_API_LATEST)
+#if GS_HAS_DECLARED_PROPERTIES
+@property (nonatomic) NSViewLayerContentsPlacement layerContentsPlacement;
+@property (nonatomic) NSViewLayerContentsRedrawPolicy layerContentsRedrawPolicy;
+#else
+- (NSViewLayerContentsPlacement) layerContentsPlacement;
+- (void) setLayerContentsPlacement: (NSViewLayerContentsPlacement)placement;
+
+- (NSViewLayerContentsRedrawPolicy) layerContentsRedrawPolicy;
+- (void) setLayerContentsRedrawPolicy: (NSViewLayerContentsRedrawPolicy) pol;
+#endif
+#endif
+
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_8, GS_API_LATEST)
+#if GS_HAS_DECLARED_PROPERTIES
+@property NSUserInterfaceLayoutDirection userInterfaceLayoutDirection;
+#else
+- (NSUserInterfaceLayoutDirection) userInterfaceLayoutDirection;
+- (void) setUserInterfaceLayoutDirection: (NSUserInterfaceLayoutDirection)dir;
+#endif
+#endif
+
+/**
+* Layout
+*/
+
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_7, GS_API_LATEST)
+- (void) layoutSubtreeIfNeeded;
+- (void) layout;
+
+#if GS_HAS_DECLARED_PROPERTIES
+@property (nonatomic) BOOL needsLayout;
+#else
+- (BOOL) needsLayout;
+- (void) setNeedsLayout: (BOOL)needsLayout;
+#endif
+
+#if GS_HAS_DECLARED_PROPERTIES
+@property (nonatomic) BOOL needsUpdateConstraints;
+#else
+- (BOOL) needsUpdateConstraints;
+- (void) setNeedsUpdateConstraints: (BOOL)needsUpdateConstraints;
+#endif
+
+#if GS_HAS_DECLARED_PROPERTIES
+@property BOOL translatesAutoresizingMaskIntoConstraints;
+#else
+- (BOOL) translatesAutoresizingMaskIntoConstraints;
+- (void) setTranslatesAutoresizingMaskIntoConstraints: (BOOL)translatesAutoresizingMaskIntoConstraints;
+#endif
+
+#if GS_HAS_DECLARED_PROPERTIES
+@property float contentCompressionResistancePriority;
+#else
+- (BOOL) contentCompressionResistancePriority;
+- (void) setContentCompressionResistancePriority: (NSLayoutPriority)priority;
+#endif
+
+#if GS_HAS_DECLARED_PROPERTIES
+@property (readonly) NSSize intrinsicContentSize;
+#else
+- (BOOL) intrinsicContentSize;
+#endif
+
+#if GS_HAS_DECLARED_PROPERTIES
+@property (readonly) CGFloat baselineOffsetFromBottom;
+#else
+- (CGFloat) baselineOffsetFromBottom;
+#endif
+
+#if GS_HAS_DECLARED_PROPERTIES
+@property (readonly) CGFloat firstBaselineOffsetFromTop;
+#else
+- (CGFloat) firstBaselineOffsetFromTop;
+#endif
+
+#endif
+
 @end
 
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_7, GS_API_LATEST)
+@interface NSView (NSConstraintBasedLayoutCoreMethods)
+
+- (void) updateConstraints;
+
+- (void) updateConstraintsForSubtreeIfNeeded;
+
+- (NSLayoutPriority) contentHuggingPriorityForOrientation: (NSLayoutConstraintOrientation)orientation;
+
+- (void) setContentHuggingPriority: (NSLayoutPriority)priority forOrientation: (NSLayoutConstraintOrientation)orientation;
+
+- (NSLayoutPriority) contentCompressionResistancePriorityForOrientation: (NSLayoutConstraintOrientation)orientation;
+
+- (void)setContentCompressionResistancePriority: (NSLayoutPriority)priority forOrientation: (NSLayoutConstraintOrientation)orientation;
+
+@end
+
+@interface NSView (NSConstraintBasedLayoutInstallingConstraints)
+
+- (void) addConstraint: (NSLayoutConstraint *)constraint;
+
+- (void) addConstraints: (NSArray*)constraints;
+
+@end
+#endif
+
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_5, GS_API_LATEST)
+/*
+ * Core Animation support methods.  More methods will be added here as more are implemented.
+ */
+
+@interface NSView (CoreAnimationSupport)
+
+- (NSShadow *) shadow;
+
+- (void) setShadow: (NSShadow *)shadow;
+
+@end
+#endif
 
 @class NSAffineTransform;
 

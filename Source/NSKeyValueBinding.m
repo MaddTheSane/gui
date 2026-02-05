@@ -29,6 +29,7 @@
 */
 
 #import <Foundation/NSArray.h>
+#import <Foundation/NSDebug.h>
 #import <Foundation/NSDictionary.h>
 #import <Foundation/NSEnumerator.h>
 #import <Foundation/NSException.h>
@@ -39,10 +40,11 @@
 #import <Foundation/NSMapTable.h>
 #import <Foundation/NSValue.h>
 #import <Foundation/NSValueTransformer.h>
-#import <GNUstepBase/GSLock.h>
+#import <Foundation/NSLock.h>
 
 #import "AppKit/NSKeyValueBinding.h"
 #import "GSBindingHelpers.h"
+#import "GSFastEnumeration.h"
 
 @implementation NSObject (NSKeyValueBindingCreation)
 
@@ -143,7 +145,7 @@ void GSBindingInvokeAction(NSString *targetKey, NSString *argumentKey,
 {
   if (self == [GSKeyValueBinding class])
     {
-      bindingLock = [GSLazyRecursiveLock new];
+      bindingLock = [NSRecursiveLock new];
       classTable = NSCreateMapTable(NSNonOwnedPointerMapKeyCallBacks,
           NSObjectMapValueCallBacks, 128);
       objectTable = NSCreateMapTable(NSNonRetainedObjectMapKeyCallBacks,
@@ -190,8 +192,11 @@ void GSBindingInvokeAction(NSString *targetKey, NSString *argumentKey,
   if (!objectTable)
     return nil;
 
+  NSDebugLLog(@"NSBinding", @"+++ called with %@, %@", binding, anObject);
   [bindingLock lock];
   bindings = (NSMutableDictionary *)NSMapGet(objectTable, (void *)anObject);
+
+  NSDebugLLog(@"NSBinding", @"+++ Bindings found for %@ => %@", anObject, bindings);
   if (bindings != nil)
     {
       theBinding = (GSKeyValueBinding*)[bindings objectForKey: binding];
@@ -319,6 +324,11 @@ void GSBindingInvokeAction(NSString *targetKey, NSString *argumentKey,
   [super dealloc];
 }
 
+- (id) observedObject
+{
+  return [info objectForKey: NSObservedObjectKey];
+}
+
 - (id) destinationValue
 {
   id newValue;
@@ -345,7 +355,10 @@ void GSBindingInvokeAction(NSString *targetKey, NSString *argumentKey,
 
 - (void) setValueFor: (NSString *)binding 
 {
-  [src setValue: [self destinationValue] forKey: binding];
+  id value = [self destinationValue];
+
+  NSDebugLLog(@"NSBinding", @"setValueFor: binding %@, source %@ value %@", binding, src, value);
+  [src setValue: value forKey: binding];
 }
 
 - (void) reverseSetValue: (id)value
@@ -355,7 +368,10 @@ void GSBindingInvokeAction(NSString *targetKey, NSString *argumentKey,
 
   keyPath = [info objectForKey: NSObservedKeyPathKey];
   dest = [info objectForKey: NSObservedObjectKey];
+  NSDebugLLog(@"NSBinding", @"reverseSetValue: keyPath %@, dest %@ value %@", keyPath, dest, value);
+  inReverseSet = YES;
   [dest setValue: value forKeyPath: keyPath];
+  inReverseSet = NO;
 }
 
 - (void) reverseSetValueFor: (NSString *)binding
@@ -372,11 +388,17 @@ void GSBindingInvokeAction(NSString *targetKey, NSString *argumentKey,
   NSDictionary *options;
   id newValue;
 
+  if (inReverseSet)
+    {
+      return;
+    }
+
   if (change != nil)
     {
       options = [info objectForKey: NSOptionsKey];
       newValue = [change objectForKey: NSKeyValueChangeNewKey];
       newValue = [self transformValue: newValue withOptions: options];
+      NSDebugLLog(@"NSBinding", @"observeValueForKeyPath: binding %@, keyPath %@, source %@ value %@", binding, keyPath, src, newValue);
       [src setValue: newValue forKey: binding];
     }
 }
@@ -444,7 +466,21 @@ void GSBindingInvokeAction(NSString *targetKey, NSString *argumentKey,
 
   if (valueTransformer != nil)
     {
-      value = [valueTransformer transformedValue: value];
+      if ([value isKindOfClass: [NSArray class]])
+        {
+          NSArray *oldValue = (NSArray *)value;
+          NSMutableArray *newValue = [[NSMutableArray alloc] initWithCapacity: [oldValue count]];
+          id<NSFastEnumeration> enumerator = oldValue;
+
+          FOR_IN (id, obj, enumerator)
+            [newValue addObject: [valueTransformer transformedValue: obj]];
+          END_FOR_IN(enumerator)
+          value = AUTORELEASE(newValue);
+        }
+      else
+        {
+          value = [valueTransformer transformedValue: value];
+        }
     }
 
   return value;
@@ -475,6 +511,12 @@ void GSBindingInvokeAction(NSString *targetKey, NSString *argumentKey,
     }
 
   return value;
+}
+
+- (NSString*) description
+{
+  return [NSString stringWithFormat: 
+                     @"GSKeyValueBinding src (%@) info %@", src, info];
 }
 
 @end
@@ -541,6 +583,12 @@ void GSBindingInvokeAction(NSString *targetKey, NSString *argumentKey,
 
 @end
 
+BOOL NSIsControllerMarker(id object)
+{
+  return [NSMultipleValuesMarker isEqual: object]
+    || [NSNoSelectionMarker isEqual: object]
+    || [NSNotApplicableMarker isEqual: object];
+}
 
 //Helper functions
 BOOL GSBindingResolveMultipleValueBool(NSString *key, NSDictionary *bindings,

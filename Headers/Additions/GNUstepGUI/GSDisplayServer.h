@@ -61,6 +61,7 @@ APPKIT_EXPORT NSString *GSDisplayName;
 APPKIT_EXPORT NSString *GSDisplayNumber;
 APPKIT_EXPORT NSString *GSScreenNumber;
 
+APPKIT_EXPORT_CLASS
 @interface GSDisplayServer : NSObject
 {
   NSMutableDictionary	*server_info;
@@ -136,6 +137,7 @@ APPKIT_EXPORT NSString *GSScreenNumber;
 - (void) windowbacking: (NSBackingStoreType)type : (int)win;
 - (void) titlewindow: (NSString *)window_title : (int)win;
 - (void) miniwindow: (int)win;
+- (BOOL) hideApplication: (int)win;
 - (BOOL) appOwnsMiniwindow;
 - (void) setWindowdevice: (int)win forContext: (NSGraphicsContext *)ctxt;
 // Deprecated

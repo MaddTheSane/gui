@@ -1546,7 +1546,7 @@ static inline NSRect buttonCellFrameFromRect(NSRect cellRect)
   if ([coder allowsKeyedCoding])
     {
       [coder encodeBool: [self hasVerticalScroller] forKey: @"NSHasVerticalScroller"];
-      [coder encodeInt: [self numberOfVisibleItems] forKey: @"NSVisibleItemCount"];
+      [coder encodeInteger: [self numberOfVisibleItems] forKey: @"NSVisibleItemCount"];
       [coder encodeBool: [self completes] forKey: @"NSCompletes"];
       [coder encodeDouble: _intercellSpacing.width forKey: @"NSIntercellSpacingWidth"];
       [coder encodeDouble: _intercellSpacing.height forKey: @"NSIntercellSpacingHeight"];
@@ -1562,10 +1562,10 @@ static inline NSRect buttonCellFrameFromRect(NSRect cellRect)
       [coder encodeValueOfObjCType: @encode(BOOL) at: &_hasVerticalScroller];
       [coder encodeValueOfObjCType: @encode(BOOL) at: &_completes];
       [coder encodeValueOfObjCType: @encode(BOOL) at: &_usesDataSource];
-      [coder encodeValueOfObjCType: @encode(int) at: &_visibleItems];
+      encode_NSInteger(coder, &_visibleItems);
       [coder encodeValueOfObjCType: @encode(NSSize) at: &_intercellSpacing];
       [coder encodeValueOfObjCType: @encode(float) at: &_itemHeight];
-      [coder encodeValueOfObjCType: @encode(int) at: &_selectedItem];
+      encode_NSInteger(coder, &_selectedItem);
       
       if (_usesDataSource == YES)
 	[coder encodeConditionalObject: _dataSource];      
@@ -1575,7 +1575,7 @@ static inline NSRect buttonCellFrameFromRect(NSRect cellRect)
 /**
  * Initializes the combo box cell with data linked to <var>decoder</var>. Take
  * note that when the decoded instance uses a data source,
- * <code>initWithCoder:<var> decodes the data source. 
+ * <code>initWithCoder:</code> decodes the data source. 
  * Finally, returns thr initialized object.
  */
 - (id) initWithCoder: (NSCoder *)aDecoder
@@ -1596,7 +1596,7 @@ static inline NSRect buttonCellFrameFromRect(NSRect cellRect)
 	}
       if ([aDecoder containsValueForKey: @"NSVisibleItemCount"])
         {
-	  [self setNumberOfVisibleItems: [aDecoder decodeIntForKey: 
+	  [self setNumberOfVisibleItems: [aDecoder decodeIntegerForKey:
 						       @"NSVisibleItemCount"]];
 	}
       if ([aDecoder containsValueForKey: @"NSCompletes"])
@@ -1649,10 +1649,10 @@ static inline NSRect buttonCellFrameFromRect(NSRect cellRect)
       [aDecoder decodeValueOfObjCType: @encode(BOOL) at: &_hasVerticalScroller];
       [aDecoder decodeValueOfObjCType: @encode(BOOL) at: &_completes];
       [aDecoder decodeValueOfObjCType: @encode(BOOL) at: &dummy];
-      [aDecoder decodeValueOfObjCType: @encode(int) at: &_visibleItems];
+      decode_NSInteger(aDecoder, &_visibleItems);
       [aDecoder decodeValueOfObjCType: @encode(NSSize) at: &_intercellSpacing];
       [aDecoder decodeValueOfObjCType: @encode(float) at: &_itemHeight];
-      [aDecoder decodeValueOfObjCType: @encode(int) at: &_selectedItem];
+      decode_NSInteger(aDecoder, &_selectedItem);
 
       if (_usesDataSource == YES)
 	[self setDataSource: [aDecoder decodeObject]];      
@@ -1775,23 +1775,39 @@ static inline NSRect buttonCellFrameFromRect(NSRect cellRect)
     }
   else
     {
+      id object = nil;
+      
       if (_dataSource == nil)
         {
-	  NSLog(@"%@: No data source currently specified", self);
-	  return nil;
-	}
-      else if ([_dataSource respondsToSelector: 
-			   @selector(comboBox:objectValueForItemAtIndex:)])
+          NSLog(@"%@: No data source currently specified", self);
+        }
+      else if ([_dataSource respondsToSelector:
+                @selector(comboBox:objectValueForItemAtIndex:)])
         {
-	  return [[_dataSource comboBox: (NSComboBox *)[self controlView] 
-			       objectValueForItemAtIndex: index] description];
-	}
-      else if ([_dataSource respondsToSelector: 
-				@selector(comboBoxCell:objectValueForItemAtIndex:)])
+          object = [_dataSource comboBox: (NSComboBox *)[self controlView]
+               objectValueForItemAtIndex: index];
+        }
+      else if ([_dataSource respondsToSelector:
+                @selector(comboBoxCell:objectValueForItemAtIndex:)])
         {
-	  return [[_dataSource comboBoxCell: self
-			      objectValueForItemAtIndex: index] description];
-	}
+          object = [_dataSource comboBoxCell: self objectValueForItemAtIndex: index];
+        }
+      
+      if (object)
+      {
+        // Check for attributed string type and return actual string instead..
+        if ([object isKindOfClass: [NSAttributedString class]])
+	  {
+            object = [object string];
+	  }
+        else
+	  {
+            object = [object description];
+	  }
+        
+        // Return the request object...
+        return object;
+      }
     }
 
   return nil;

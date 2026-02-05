@@ -46,17 +46,36 @@
 #ifndef XMD_H
 #define XMD_H
 #endif
+
 /* And another so that boolean is not redefined in jmorecfg.h. */
 #ifndef HAVE_BOOLEAN
 #define HAVE_BOOLEAN
-/* This MUST match the jpeg definition of boolean */
+/* we don't redefine boolean any longer, there is an inconsistency in certain JPEG versions - this is heuristic, in case JPEG load files comment out as not needed */
+#if defined(__MINGW32_VERSION)
 typedef int jpeg_boolean;
 #define boolean jpeg_boolean
 #endif
+#endif
+
+/* Hide interface on MinGW not to interfere with MSYS2 base stuff */
+#pragma push_macro("interface")
+#undef interface
+#define interface struct
+
 #endif // __MINGW32__
+
 #include <jpeglib.h>
+
+#if defined(__MINGW32__)
+#pragma pop_macro("interface")
+#endif // __MINGW32__
+
 #include <setjmp.h>
 
+
+#ifndef HAVE_FLOORF
+#define floorf(x) floor(x)
+#endif
 
 /* -----------------------------------------------------------
    The following functions are for interacting with the
@@ -324,10 +343,16 @@ static void gs_jpeg_memory_dest_create (j_compress_ptr cinfo, NSData** data)
 
 static void gs_jpeg_memory_dest_destroy (j_compress_ptr cinfo)
 {
+  if (NULL == cinfo)
+    return;
+
   gs_jpeg_dest_ptr dest = (gs_jpeg_dest_ptr) cinfo->dest;
-  free (dest->buffer);
-  free (dest->data);
-  free (dest);
+  if (NULL != dest)
+    {
+      free (dest->buffer);
+      free (dest->data);
+      free (dest);
+    }
   cinfo->dest = NULL;
 }
 
@@ -394,6 +419,7 @@ static void gs_jpeg_memory_dest_destroy (j_compress_ptr cinfo)
   unsigned char *imgbuffer = NULL;
   BOOL isProgressive;
   double x_density, y_density;
+  NSString *outColorSpace;
 
   if (!(self = [super init]))
     return nil;
@@ -431,9 +457,17 @@ static void gs_jpeg_memory_dest_destroy (j_compress_ptr cinfo)
 
   jpeg_read_header(&cinfo, TRUE);
 
-  /* we use RGB as target color space; others are not yet supported */
-  cinfo.out_color_space = JCS_RGB;
-
+  if (cinfo.jpeg_color_space == JCS_GRAYSCALE)
+    {
+      cinfo.out_color_space = JCS_GRAYSCALE;
+      outColorSpace = NSCalibratedWhiteColorSpace;
+    }
+  else
+    {
+      /* In all other cases we use RGB as target color space; others are not yet supported */
+      cinfo.out_color_space = JCS_RGB;
+      outColorSpace = NSCalibratedRGBColorSpace;
+    }
   /* decompress */
   jpeg_start_decompress(&cinfo);
 
@@ -498,9 +532,9 @@ static void gs_jpeg_memory_dest_destroy (j_compress_ptr cinfo)
 		      pixelsHigh: cinfo.output_height
 		   bitsPerSample: BITS_IN_JSAMPLE
 		 samplesPerPixel: cinfo.output_components
-			hasAlpha: (cinfo.output_components == 3 ? NO : YES)
+			hasAlpha: NO // JPEG has no Alpha support
 			isPlanar: NO
-		  colorSpaceName: NSCalibratedRGBColorSpace
+		  colorSpaceName: outColorSpace
 		     bytesPerRow: rowSize
 		    bitsPerPixel: BITS_IN_JSAMPLE * cinfo.output_components];
 
@@ -552,6 +586,7 @@ static void gs_jpeg_memory_dest_destroy (j_compress_ptr cinfo)
   int				sPP;
   int				width;
   int				height;
+  NSSize                        size;
   int				row_stride;
   int				quality = 90;
   NSNumber			*qualityNumber;
@@ -638,6 +673,20 @@ static void gs_jpeg_memory_dest_destroy (j_compress_ptr cinfo)
     }
 
   jpeg_set_defaults (&cinfo);
+
+  // resolution/density
+  size = [self size];
+  if (width != (int)(size.width) || height != (int)(size.height))
+    {
+      unsigned x_density, y_density;
+
+      x_density = (unsigned)floorf(width * 72 / size.width + 0.5);
+      y_density = (unsigned)floorf(height * 72 / size.height + 0.5);
+      cinfo.X_density = x_density;
+      cinfo.Y_density = y_density;
+      cinfo.density_unit = 1;
+    }
+
 
   // set quality
   // we expect a value between 0..1, 0 being lowest, 1 highest quality

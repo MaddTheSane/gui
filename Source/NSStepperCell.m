@@ -35,6 +35,7 @@
 #import "AppKit/NSStepperCell.h"
 #import "AppKit/NSWindow.h"
 #import "GNUstepGUI/GSTheme.h"
+#import "GSGuiPrivate.h"
 
 @interface NSStepperCell (Private)
 - (void) _increment;
@@ -184,6 +185,7 @@
 {
   NSPoint location = [theEvent locationInWindow];
   NSPoint point = [controlView convertPoint: location fromView: nil];
+  NSPoint last_point = point;
   NSRect upRect;
   NSRect downRect;
   NSRect rect;
@@ -194,18 +196,18 @@
   unsigned int periodCount = 0;
   BOOL isDirectionUp;
   BOOL autorepeat = [self autorepeat];
-  BOOL done = NO;
   BOOL mouseWentUp = NO;
+  BOOL tracking;
 
   _mouse_down_flags = [theEvent modifierFlags];
-  if (![self startTrackingAt: point inView: controlView])
+
+  if ([self isEnabled] == NO)
     return NO;
 
   if (![controlView mouse: point inRect: cellFrame])
     return NO;	// point is not in cell
 
-  if ([self isEnabled] == NO)
-    return NO;
+  tracking = [self startTrackingAt: point inView: controlView];
 
   if ([theEvent type] != NSLeftMouseDown)
     return NO;
@@ -226,7 +228,7 @@
     }
   else
     {
-      return mouseWentUp;
+      return NO;
     }
 
   [self setHighlighted: YES
@@ -241,9 +243,9 @@
       event_mask |= NSPeriodicMask;
     }
 
-  while (!done)
+  while (YES)
     {
-      NSEventType	eventType;
+      NSEventType eventType;
 
       theEvent = [NSApp nextEventMatchingMask: event_mask
 			untilDate: [NSDate distantFuture]
@@ -255,39 +257,48 @@
       if (eventType == NSLeftMouseUp)
 	{
 	  mouseWentUp = YES;
-	  done = YES;
+	  break;
 	}
-
-      if (eventType == NSPeriodic)
+      else if (eventType == NSPeriodic)
         {
-	  periodCount++;
 	  if (periodCount == 4) 
-	    periodCount = 0;
-	  if (periodCount == 0)
-	    {
-	      if (isDirectionUp)
+            {
+              if (isDirectionUp)
 		[self _increment];
 	      else
 		[self _decrement];
+
 	      [(NSControl*)controlView sendAction: [self action] to: [self target]];
+              location = [[controlView window] mouseLocationOutsideOfEventStream];
+              last_point = point;
+              point = [controlView convertPoint: location fromView: nil];
+              periodCount = 0;
 	    }
-	  location = [[controlView window] mouseLocationOutsideOfEventStream];
+          else
+            {
+              periodCount++;
+            }
 	}
       else
         {
 	  location = [theEvent locationInWindow];
+          last_point = point;
+          point = [controlView convertPoint: location fromView: nil];
 	}
-      point = [controlView convertPoint: location fromView: nil];
 
-      if (![controlView mouse: point inRect: cellFrame])
+      if (!flag && ![controlView mouse: point inRect: cellFrame])
 	{
-	  if (flag == NO) 
-	    {
-	      done = YES;
-	    }
+          break;
 	}
 
-      if (NSMouseInRect(point, rect, NO) != overButton)
+      if (tracking)
+        {
+          tracking = [self continueTracking: last_point
+                                         at: point
+                                     inView: controlView];
+         }
+
+       if (NSMouseInRect(point, rect, NO) != overButton)
         {
 	  overButton = !overButton;
 	  if (overButton && autorepeat)
@@ -304,6 +315,14 @@
 		withFrame: cellFrame
 		inView: controlView];
 	}
+    }
+
+  if (tracking)
+    {
+      [self stopTracking: last_point
+                      at: point
+                  inView: controlView
+               mouseIsUp: mouseWentUp];
     }
 
   if (overButton && autorepeat)
@@ -328,6 +347,24 @@
   return mouseWentUp;
 }
 
+- (NSSize) cellSize
+{
+  NSRect upRect = [[GSTheme theme]
+                    stepperUpButtonRectWithFrame: [_control_view bounds]];
+  NSRect downRect = [[GSTheme theme]
+                      stepperDownButtonRectWithFrame: [_control_view bounds]];
+  NSSize size;
+
+  if (upRect.size.width > downRect.size.width)
+    size.width = upRect.size.width;
+  else
+    size.width = downRect.size.width;
+
+  size.height = upRect.size.height + downRect.size.height;
+
+  return size;
+}
+
 //
 // NSCoding protocol
 //
@@ -345,21 +382,18 @@
     }
   else
   {
-    int tmp1, tmp2;
+    NSInteger tmp;
 
-    tmp1 = (int)_autorepeat;
-    tmp2 = (int)_valueWraps;
-    
     [aCoder encodeValueOfObjCType: @encode(double)
 	    at: &_maxValue];
     [aCoder encodeValueOfObjCType: @encode(double)
 	    at: &_minValue];
     [aCoder encodeValueOfObjCType: @encode(double)
 	    at: &_increment];
-    [aCoder encodeValueOfObjCType: @encode(int)
-	    at: &tmp1];
-    [aCoder encodeValueOfObjCType: @encode(int)
-	    at: &tmp2];
+    tmp = _autorepeat;
+    encode_NSInteger(aCoder, &tmp);
+    tmp = _valueWraps;
+    encode_NSInteger(aCoder, &tmp);
   }
 }
 
@@ -382,7 +416,7 @@
     }
   else
     {
-      int tmp1, tmp2;
+      NSInteger tmp;
 
       [aDecoder decodeValueOfObjCType: @encode(double)
 		at: &_maxValue];
@@ -390,13 +424,10 @@
 		at: &_minValue];
       [aDecoder decodeValueOfObjCType: @encode(double)
 		at: &_increment];
-      [aDecoder decodeValueOfObjCType: @encode(int)
-		at: &tmp1];
-      [aDecoder decodeValueOfObjCType: @encode(int)
-		at: &tmp2];
-
-      _autorepeat = (BOOL)tmp1;
-      _valueWraps = (BOOL)tmp2;
+      decode_NSInteger(aDecoder, &tmp);
+      _autorepeat = (BOOL)tmp;
+      decode_NSInteger(aDecoder, &tmp);
+      _valueWraps = (BOOL)tmp;
     }
 
   return self;

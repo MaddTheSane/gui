@@ -120,6 +120,26 @@ static Class textFieldCellClass;
   return YES;
 }
 
+- (void) setPlaceholderString: (NSString *)string
+{
+  [_cell setPlaceholderString: string];
+}
+
+- (NSString *) placeholderString
+{
+  return [_cell placeholderString];
+}
+
+- (void) setPlaceholderAttributedString: (NSAttributedString *)string
+{
+  [_cell setPlaceholderAttributedString: string];
+}
+
+- (NSAttributedString *) placeholderAttributedString
+{
+  return [_cell placeholderAttributedString];
+}
+
 /** <p>Returns whether the NSTextField is editable. By default a NSTextField
     is not editable.</p>
     <p>See Also: -setEditable: [NSCell-isEditable]</p>
@@ -536,7 +556,6 @@ static Class textFieldCellClass;
 
 - (void) textDidChange: (NSNotification *)aNotification
 {
-
   NSFormatter *formatter;
 
   [super textDidChange: aNotification];
@@ -757,7 +776,6 @@ static Class textFieldCellClass;
   self = [super initWithCoder: aDecoder];
   if ([aDecoder allowsKeyedCoding])
     {
-      // do nothing for now...
     }
   else
     {

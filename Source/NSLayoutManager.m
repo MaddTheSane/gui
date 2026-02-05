@@ -1337,11 +1337,11 @@ has the same y origin and height as the line frag rect it is in.
   return NO;
 }
 
-- (void) setAllowsNonContiguousLayout: (BOOL)flag;
+- (void) setAllowsNonContiguousLayout: (BOOL)flag
 {
 }
 
-- (BOOL) hasNonContiguousLayout;
+- (BOOL) hasNonContiguousLayout
 {
   return NO;
 }
@@ -1523,7 +1523,7 @@ attachmentSize(linefrag_t *lf, NSUInteger glyphIndex)
 
   if (la)
     {
-      while (la->pos != glyphIndex && la_i < lf->num_attachments)
+      while (la_i < lf->num_attachments && la->pos != glyphIndex)
         {
           la++;
           la_i++;
@@ -1815,7 +1815,7 @@ attachmentSize(linefrag_t *lf, NSUInteger glyphIndex)
 		  unsigned int char_index =
 		    [self characterRangeForGlyphRange: NSMakeRange(g, 1)
 				     actualGlyphRange: NULL].location;
-		  NSObject<NSTextAttachmentCell> *cell = [[_textStorage attribute: NSAttachmentAttributeName
+		  id<NSTextAttachmentCell> cell = [[_textStorage attribute: NSAttachmentAttributeName
 			atIndex: char_index
 			effectiveRange: NULL] attachmentCell];
 		  NSRect cellFrame;
@@ -3015,6 +3015,11 @@ no_soft_invalidation:
     {
       return self;
     }
+}
+
+- (NSDictionary *) typingAttributes
+{
+  return _typingAttributes;
 }
 
 @end

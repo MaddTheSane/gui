@@ -32,6 +32,12 @@
 
 @class NSWindow;
 
+typedef enum _GSResizeEdgeMode {
+  GSResizeEdgeBottomLeftMode = 0,
+  GSResizeEdgeBottomRightMode = 1,
+  GSResizeEdgeBottomMode = 2,
+} GSResizeEdgeMode;
+
 // These are implemented as class methods on GSWindowDecorationView
 @protocol GSWindowDecorator
 - (id) newWindowDecorationViewWithFrame: (NSRect)frame
@@ -50,6 +56,7 @@ Abstract superclass for the top-level view in each window. This view is
 responsible for managing window decorations. Concrete subclasses may do
 this, either directly, or indirectly (by using the backend).
 */
+APPKIT_EXPORT_CLASS
 @interface GSWindowDecorationView : NSView
 {
   NSWindow *window; /* not retained */
@@ -60,6 +67,7 @@ this, either directly, or indirectly (by using the backend).
   BOOL hasMenu;
   BOOL hasToolbar;
 }
+
 + (id<GSWindowDecorator>) windowDecorator;
 
 - (id) initWithFrame: (NSRect)frame window: (NSWindow *)w;
@@ -95,6 +103,7 @@ windowNumber will be 0.
 /* Manage window decorations by using the backend functions. This only works
  * on backends that can handle window decorations.
  */
+APPKIT_EXPORT_CLASS
 @interface GSBackendWindowDecorationView : GSWindowDecorationView
 @end
 
@@ -104,6 +113,7 @@ Standard OPENSTEP-ish window decorations.
 */
 @class NSButton;
 
+APPKIT_EXPORT_CLASS
 @interface GSStandardWindowDecorationView : GSWindowDecorationView
 {
   BOOL hasTitleBar, hasResizeBar, hasCloseButton, hasMiniaturizeButton;
@@ -115,6 +125,10 @@ Standard OPENSTEP-ish window decorations.
 
   NSButton *closeButton, *miniaturizeButton;
 }
+- (BOOL) pointInContentRect:(NSPoint)point;
+- (BOOL) pointInTitleBarRect:(NSPoint)point;
+- (BOOL) pointInResizeBarRect:(NSPoint)point;
+- (GSResizeEdgeMode) resizeModeForPoint:(NSPoint)point;
 @end
 
 #endif

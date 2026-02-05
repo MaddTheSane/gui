@@ -55,8 +55,10 @@ enum {
 };
 
 #if OS_API_VERSION(MAC_OS_X_VERSION_10_3, GS_API_LATEST)
+APPKIT_EXPORT_CLASS
 @interface GSLayoutManager : NSObject <NSGlyphStorage, NSCoding>
 #else
+APPKIT_EXPORT_CLASS
 @interface GSLayoutManager : NSObject
 #endif
 {
@@ -137,6 +139,13 @@ how it's supposed to work. It's functional and correct, but it isn't fast. */
 - (BOOL) showsControlCharacters;
 
 
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_2, GS_API_LATEST)
+- (CGFloat) defaultLineHeightForFont: (NSFont*)theFont;
+#endif
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_5, GS_API_LATEST)
+- (CGFloat) defaultBaselineOffsetForFont: (NSFont*)theFont;
+#endif
+
 /** Font handling **/
 
 - (BOOL) usesScreenFonts;
@@ -168,6 +177,7 @@ If characters have been edited, lengthChange has the text length delta.
 forStartingGlyphAtIndex: (NSUInteger)glyph
        characterIndex: (NSUInteger)index;
 
+- (NSDictionary *) typingAttributes;
 
 @end
 

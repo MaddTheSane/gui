@@ -965,7 +965,7 @@ static CGFloat scrollerWidth;
     }
   else if (_rulersVisible)
     {
-      [self addSubview:_horizRuler];
+      [self addSubview: _horizRuler];
     }
 
   if (_rulersVisible)
@@ -1016,7 +1016,7 @@ static CGFloat scrollerWidth;
     }
   else if (_rulersVisible)
     {
-      [self addSubview:_vertRuler];
+      [self addSubview: _vertRuler];
     }
 
   if (_rulersVisible)
@@ -1213,10 +1213,15 @@ GSOppositeEdge(NSRectEdge edge)
 
       /** Vertically expand the scroller by 1pt on each end */
       if (overlapBorders)
-	{
+        {
 	  vertScrollerRect.origin.y -= 1;
 	  vertScrollerRect.size.height += 2;
 	}
+      else if (_hasHeaderView || _hasCornerView)
+        {
+	  vertScrollerRect.origin.y -= 1;
+	  vertScrollerRect.size.height += 1;
+        }
 
       [_vertScroller setFrame: vertScrollerRect];
 
@@ -1575,6 +1580,16 @@ GSOppositeEdge(NSRectEdge edge)
         flags |= 512;
 
       [aCoder encodeInt: flags forKey: @"NSsFlags"];
+
+      // XIB 5 keys...
+      [aCoder encodeInteger: _hLineScroll
+                     forKey: @"horizontalLineScroll"];
+      [aCoder encodeInteger: _hPageScroll
+                     forKey: @"horizontalPageScroll"];
+      [aCoder encodeInteger: _vLineScroll
+                     forKey: @"verticalLineScroll"];
+      [aCoder encodeInteger: _vPageScroll
+                     forKey: @"verticalPageScroll"];
     }
   else
     {
@@ -1639,6 +1654,16 @@ GSOppositeEdge(NSRectEdge edge)
       /* _autohidesScroller, _rulersVisible, _hasHorizRuler and _hasVertRuler 
          implicitly set to NO */
 
+      // XIB 5 keys...
+      if ([aDecoder containsValueForKey: @"horizontalLineScroll"])
+        _hLineScroll = [aDecoder decodeIntegerForKey: @"horizontalLineScroll"];
+      if ([aDecoder containsValueForKey: @"horizontalPageScroll"])
+        _hPageScroll = [aDecoder decodeIntegerForKey: @"horizontalPageScroll"];
+      if ([aDecoder containsValueForKey: @"verticalLineScroll"])
+        _vLineScroll = [aDecoder decodeIntegerForKey: @"verticalLineScroll"];
+      if ([aDecoder containsValueForKey: @"verticalPageScroll"])
+        _vPageScroll = [aDecoder decodeIntegerForKey: @"verticalPageScroll"];
+
       if ([aDecoder containsValueForKey: @"NSsFlags"])
         {
           int flags = [aDecoder decodeInt32ForKey: @"NSsFlags"];
@@ -1671,12 +1696,14 @@ GSOppositeEdge(NSRectEdge edge)
         {
           [self setHorizontalScroller: hScroller];
 	  [hScroller setHidden: NO];
+          [self addSubview: _horizScroller];
         }
 
       if (vScroller != nil && _hasVertScroller)
         {
           [self setVerticalScroller: vScroller];
 	  [vScroller setHidden: NO];
+          [self addSubview: _vertScroller];
         }
 
       if ([aDecoder containsValueForKey: @"NSHeaderClipView"])
@@ -1753,6 +1780,77 @@ GSOppositeEdge(NSRectEdge edge)
     object: nil];
 
   return self;
+}
+
+- (BOOL)automaticallyAdjustsContentInsets
+{
+  // FIXME
+  return NO;
+}
+
+- (void)setAutomaticallyAdjustsContentInsets: (BOOL)adjusts
+{
+  static BOOL logged = NO;
+  if (!logged)
+    {
+      NSLog(@"warning: stub no-op implementation of"
+            "-[NSScrollView setAutomaticallyAdjustsContentInsets:]");
+      logged = YES;
+    }
+}
+
+- (NSEdgeInsets)contentInsets
+{
+  // FIXME
+  return NSEdgeInsetsZero;
+}
+- (void)setContentInsets: (NSEdgeInsets)edgeInsets
+{
+  static BOOL logged = NO;
+  if (!logged)
+    {
+      NSLog(@"warning: stub no-op implementation of"
+            "-[NSScrollView setContentInsets:]");
+      logged = YES;
+    }
+}
+
+- (NSEdgeInsets)scrollerInsets
+{
+  // FIXME
+  return NSEdgeInsetsZero;
+}
+- (void)setScrollerInsets: (NSEdgeInsets)insets
+{
+  static BOOL logged = NO;
+  if (!logged)
+    {
+      NSLog(@"warning: stub no-op implementation of"
+            "-[NSScrollView setScrollerInsets:]");
+      logged = YES;
+    }
+}
+
+- (NSScrollerStyle)scrollerStyle {
+  return _scrollerStyle;
+}
+
+- (void)setScrollerStyle:(NSScrollerStyle)style {
+  [[self horizontalScroller] setScrollerStyle:style];
+  [[self verticalScroller] setScrollerStyle:style];
+  _scrollerStyle = style;
+}
+- (NSScrollerKnobStyle)scrollerKnobStyle {
+  return _scrollerKnobStyle;
+}
+- (void)setScrollerKnobStyle:(NSScrollerKnobStyle)style {
+  [[self horizontalScroller] setKnobStyle:style];
+  [[self verticalScroller] setKnobStyle:style];
+  _scrollerKnobStyle = style;
+}
+- (void)flashScrollers {
+  [[self horizontalScroller] flashScroller];
+  [[self verticalScroller] flashScroller];
 }
 
 @end

@@ -29,7 +29,7 @@
 
 #ifndef _GNUstep_H_NSPanel
 #define _GNUstep_H_NSPanel
-#import <GNUstepBase/GSVersionMacros.h>
+#import <AppKit/AppKitDefines.h>
 
 #import <AppKit/NSWindow.h>
 
@@ -70,6 +70,7 @@ enum {
 #define	NS_ALERTERROR		NSAlertErrorReturn
 #endif
 
+APPKIT_EXPORT_CLASS
 @interface NSPanel : NSWindow
 {
   // Think of the following as BOOL ivars
@@ -121,6 +122,15 @@ APPKIT_EXPORT NSInteger NSRunAlertPanel(NSString *title,
                                         NSString *defaultButton,
                                         NSString *alternateButton,
                                         NSString *otherButton, ...);
+
+// Synchronous alert that is displayed as a sheet attached to the provided
+// window. If docWindow is nil it falls back to NSRunAlertPanel.
+APPKIT_EXPORT NSInteger NSRunAlertPanelRelativeToWindow(NSString *title,
+                                                        NSString *msg,
+                                                        NSString *defaultButton,
+                                                        NSString *alternateButton,
+                                                        NSString *otherButton,
+							NSWindow *docWindow, ...);
 
 #if OS_API_VERSION(GS_API_MACOSX, GS_API_LATEST)
 APPKIT_EXPORT NSInteger NSRunCriticalAlertPanel(NSString *title,

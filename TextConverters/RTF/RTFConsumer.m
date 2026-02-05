@@ -288,6 +288,7 @@ static BOOL classInheritsFromNSMutableAttributedString (Class c)
          instruction: (NSString*)instruction;
 - (void) appendImage: (NSString*) string;
 - (void) reset;
+- (void) setEncoding: (NSStringEncoding)anEncoding;
 @end
 
 @implementation RTFConsumer
@@ -545,6 +546,11 @@ static BOOL classInheritsFromNSMutableAttributedString (Class c)
   RELEASE(attr);
 }
 
+- (void) setEncoding: (NSStringEncoding)anEncoding
+{
+  encoding = anEncoding;
+}
+
 - (RTFAttribute*) attr
 {
   return [attrs lastObject];
@@ -571,7 +577,6 @@ static BOOL classInheritsFromNSMutableAttributedString (Class c)
   CREATE_AUTORELEASE_POOL(pool);
   RTFscannerCtxt scanner;
   StringContext stringCtxt;
-  char buffer[5];
 
   // We read in the first few characters to find out which
   // encoding we have
@@ -580,26 +585,6 @@ static BOOL classInheritsFromNSMutableAttributedString (Class c)
       // Too short to be an RTF
       return nil;
     }
-  [rtfData getBytes: buffer range: NSMakeRange(7, 3)];
-  if (strncmp(buffer, "mac", 3) == 0)
-    {
-      encoding = NSMacOSRomanStringEncoding;
-    }
-  else if (strncmp(buffer, "pc", 2) == 0)
-    {
-      // FIXME: Code page 437 kCFStringEncodingDOSLatinUS
-      encoding = NSISOLatin1StringEncoding;
-    }
-  else if (strncmp(buffer, "pca", 3) == 0)
-    {
-      // FIXME: Code page 850 kCFStringEncodingDOSLatin1
-      encoding = NSISOLatin1StringEncoding;
-    }
-  else
-    {
-      encoding = NSISOLatin1StringEncoding;
-    }
-
 
   // Reset this RFTConsumer, as it might already have been used!
   _class = class;
@@ -1392,6 +1377,12 @@ void GSRTFaddField (void *ctxt, int start, const char *inst)
 {
   NSString *fieldInstruction;
 
+  if (inst == NULL)
+    {
+      NSLog(@"RTF add field content is NULL");
+      return;
+    }
+  
   // Ignore leading blanks
   while (inst[0] == ' ')
     {
@@ -1402,4 +1393,50 @@ void GSRTFaddField (void *ctxt, int start, const char *inst)
       
   [(RTFDConsumer *)ctxt appendField: start instruction: fieldInstruction];
   DESTROY(fieldInstruction);
+}
+
+void GSRTFencoding(void *ctxt, int encoding)
+{
+  switch (encoding)
+    {
+    // ansi
+    case 1:
+      [(RTFDConsumer *)ctxt setEncoding: NSISOLatin1StringEncoding];
+      break;
+    // mac
+    case 2:
+      [(RTFDConsumer *)ctxt setEncoding: NSMacOSRomanStringEncoding];
+      break;
+    // pc
+    case 3:
+      // FIXME: Code page 437 kCFStringEncodingDOSLatinUS
+      [(RTFDConsumer *)ctxt setEncoding: NSISOLatin1StringEncoding];
+      break;
+    // pca
+    case 4:
+      // FIXME: Code page 850 kCFStringEncodingDOSLatin1
+      [(RTFDConsumer *)ctxt setEncoding: NSISOLatin1StringEncoding];
+      break;
+    case 1250:
+      [(RTFDConsumer *)ctxt setEncoding: NSWindowsCP1250StringEncoding];
+      break;
+    case 1251:
+      [(RTFDConsumer *)ctxt setEncoding: NSWindowsCP1251StringEncoding];
+      break;
+    case 1252:
+      [(RTFDConsumer *)ctxt setEncoding: NSWindowsCP1252StringEncoding];
+      break;
+    case 1253:
+      [(RTFDConsumer *)ctxt setEncoding: NSWindowsCP1253StringEncoding];
+      break;
+    case 1254:
+      [(RTFDConsumer *)ctxt setEncoding: NSWindowsCP1254StringEncoding];
+      break;
+    case 10000:
+      [(RTFDConsumer *)ctxt setEncoding: NSMacOSRomanStringEncoding];
+      break;
+    default:
+      NSLog(@"Setting unknown encoding %d", encoding);
+      break;
+    }
 }

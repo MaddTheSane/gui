@@ -25,6 +25,8 @@
 
 MAKEFILE_NAME = DocMakefile
 
+include ../Version
+
 include $(GNUSTEP_MAKEFILES)/common.make
 
 ADD_THESE_QUESTION_MARK = \
@@ -38,125 +40,274 @@ NSUserInterfaceValidation.h \
 
 # These are gui headers that are also classes documented with autogsdoc
 AUTOGSDOC_HEADERS_GUI = \
+AppKitDefines.h \
+AppKitErrors.h \
+AppKitExceptions.h \
+AppKit.h \
+DPSOperators.h \
+NSAccessibilityConstants.h \
+NSAccessibilityCustomAction.h \
+NSAccessibilityCustomRotor.h \
+NSAccessibilityElement.h \
+NSAccessibility.h \
+NSAccessibilityProtocols.h \
 NSActionCell.h \
 NSAffineTransform.h \
+NSAlert.h \
+NSAnimationContext.h \
+NSAnimation.h \
+NSAppearance.h \
 NSApplication.h \
+NSArrayController.h \
 NSAttributedString.h \
 NSBezierPath.h \
 NSBitmapImageRep.h \
 NSBox.h \
-NSBrowser.h \
 NSBrowserCell.h \
-NSButton.h \
+NSBrowser.h \
 NSButtonCell.h \
+NSButton.h \
+NSButtonTouchBarItem.h \
 NSCachedImageRep.h \
+NSCandidateListTouchBarItem.h \
 NSCell.h \
+NSCIImageRep.h \
+NSClickGestureRecognizer.h \
 NSClipView.h \
+NSCollectionViewCompositionalLayout.h \
+NSCollectionViewFlowLayout.h \
+NSCollectionViewGridLayout.h \
+NSCollectionView.h \
+NSCollectionViewItem.h \
+NSCollectionViewLayout.h \
+NSCollectionViewTransitionLayout.h \
 NSColor.h \
 NSColorList.h \
 NSColorPanel.h \
 NSColorPicker.h \
+NSColorPickerTouchBarItem.h \
+NSColorPicking.h \
+NSColorSampler.h \
+NSColorSpace.h \
 NSColorWell.h \
-NSComboBox.h \
 NSComboBoxCell.h \
+NSComboBox.h \
 NSControl.h \
+NSController.h \
 NSCursor.h \
 NSCustomImageRep.h \
+NSCustomTouchBarItem.h \
+NSDataAsset.h \
 NSDataLink.h \
 NSDataLinkManager.h \
 NSDataLinkPanel.h \
-NSDocument.h \
+NSDatePickerCell.h \
+NSDatePicker.h \
+NSDockTile.h \
 NSDocumentController.h \
+NSDocument.h \
+NSDragging.h \
 NSDrawer.h \
 NSEPSImageRep.h \
+NSErrors.h \
 NSEvent.h \
+NSFileWrapperExtensions.h \
 NSFileWrapper.h \
+NSFontAssetRequest.h \
+NSFontCollection.h \
+NSFontDescriptor.h \
 NSFont.h \
 NSFontManager.h \
 NSFontPanel.h \
-NSForm.h \
 NSFormCell.h \
+NSForm.h \
+NSGestureRecognizer.h \
+NSGlyphGenerator.h \
+NSGlyphInfo.h \
+NSGradient.h \
 NSGraphicsContext.h \
+NSGraphics.h \
+NSGridView.h \
+NSGroupTouchBarItem.h \
 NSHelpManager.h \
 NSHelpPanel.h \
-NSImage.h \
 NSImageCell.h \
+NSImage.h \
 NSImageRep.h \
 NSImageView.h \
 NSInputManager.h \
 NSInputServer.h \
 NSInterfaceStyle.h \
+NSKeyValueBinding.h \
+NSLayoutAnchor.h \
+NSLayoutConstraint.h \
+NSLayoutGuide.h \
 NSLayoutManager.h \
+NSLevelIndicatorCell.h \
+NSLevelIndicator.h \
+NSMagnificationGestureRecognizer.h \
 NSMatrix.h \
+NSMediaLibraryBrowserController.h \
 NSMenu.h \
-NSMenuItem.h \
 NSMenuItemCell.h \
+NSMenuItem.h \
 NSMenuView.h \
+NSMovie.h \
+NSMovieView.h \
+NSNibConnector.h \
+NSNibControlConnector.h \
+NSNibDeclarations.h \
 NSNib.h \
+NSNibLoading.h \
+NSNibOutletConnector.h \
+NSObjectController.h \
 NSOpenGL.h \
 NSOpenGLView.h \
 NSOpenPanel.h \
 NSOutlineView.h \
+NSPageController.h \
 NSPageLayout.h \
 NSPanel.h \
+NSPanGestureRecognizer.h \
 NSParagraphStyle.h \
 NSPasteboard.h \
-NSPopUpButton.h \
+NSPasteboardItem.h \
+NSPathCell.h \
+NSPathComponentCell.h \
+NSPathControl.h \
+NSPathControlItem.h \
+NSPDFImageRep.h \
+NSPDFInfo.h \
+NSPDFPanel.h \
+NSPersistentDocument.h \
+NSPickerTouchBarItem.h \
+NSPICTImageRep.h \
+NSPopover.h \
+NSPopoverTouchBarItem.h \
 NSPopUpButtonCell.h \
+NSPopUpButton.h \
+NSPredicateEditor.h \
+NSPredicateEditorRowTemplate.h \
+NSPressGestureRecognizer.h \
+NSPrinter.h \
 NSPrintInfo.h \
 NSPrintOperation.h \
 NSPrintPanel.h \
-NSPrinter.h \
 NSProgressIndicator.h \
 NSResponder.h \
+NSRotationGestureRecognizer.h \
+NSRuleEditor.h \
 NSRulerMarker.h \
 NSRulerView.h \
+NSRunningApplication.h \
 NSSavePanel.h \
 NSScreen.h \
-NSScrollView.h \
 NSScroller.h \
+NSScrollView.h \
+NSScrubber.h \
+NSScrubberItemView.h \
+NSScrubberLayout.h \
+NSSearchFieldCell.h \
+NSSearchField.h \
 NSSecureTextField.h \
+NSSegmentedCell.h \
+NSSegmentedControl.h \
+NSSeguePerforming.h \
 NSSelection.h \
-NSSlider.h \
+NSShadow.h \
+NSSharingService.h \
+NSSharingServicePickerToolbarItem.h \
+NSSharingServicePickerTouchBarItem.h \
+NSSliderAccessory.h \
 NSSliderCell.h \
-NSSound.h  \
+NSSlider.h \
+NSSliderTouchBarItem.h \
+NSSound.h \
+NSSpeechRecognizer.h \
+NSSpeechSynthesizer.h \
 NSSpellChecker.h \
+NSSpellProtocol.h \
 NSSpellServer.h \
+NSSplitViewController.h \
 NSSplitView.h \
-NSStepper.h \
+NSSplitViewItem.h \
+NSStackView.h \
+NSStatusBarButton.h \
+NSStatusBar.h \
+NSStatusItem.h \
 NSStepperCell.h \
+NSStepper.h \
+NSStepperTouchBarItem.h \
+NSStoryboard.h \
+NSStoryboardSegue.h \
 NSStringDrawing.h \
-NSTabView.h \
-NSTabViewItem.h \
+NSSwitch.h \
 NSTableColumn.h \
 NSTableHeaderCell.h \
 NSTableHeaderView.h \
 NSTableView.h \
-NSText.h \
+NSTabViewController.h \
+NSTabView.h \
+NSTabViewItem.h \
+NSTextAlternatives.h \
 NSTextAttachment.h \
+NSTextCheckingClient.h \
+NSTextCheckingController.h \
 NSTextContainer.h \
-NSTextField.h \
 NSTextFieldCell.h \
+NSTextField.h \
+NSTextFinder.h \
+NSText.h \
+NSTextInputClient.h \
+NSTextInputContext.h \
+NSTextList.h \
 NSTextStorage.h \
+NSTextTable.h \
 NSTextView.h \
+NSTitlebarAccessoryViewController.h \
+NSTokenFieldCell.h \
+NSTokenField.h \
 NSToolbar.h \
+NSToolbarItemGroup.h \
 NSToolbarItem.h \
+NSTouchBar.h \
+NSTouchBarItem.h \
+NSTouch.h \
+NSTrackingArea.h \
+NSTreeController.h \
+NSTreeNode.h \
+NSUserDefaultsController.h \
+NSUserInterfaceCompression.h \
+NSUserInterfaceItemIdentification.h \
+NSUserInterfaceItemSearching.h \
+NSUserInterfaceLayout.h \
+NSUserInterfaceValidation.h \
+NSViewController.h \
 NSView.h \
-NSWindow.h \
+NSVisualEffectView.h \
 NSWindowController.h \
-NSWorkspace.h
+NSWindow.h \
+NSWindowRestoration.h \
+NSWorkspace.h \
+PSOperators.h
 
 AUTOGSDOC_HEADERS_GUIADD = \
 GSDisplayServer.h \
 GSTheme.h \
 GSTable.h \
 GSHbox.h \
-GSVbox.h \
+GSVbox.h
 
 DOCUMENT_NAME = Gui GuiAdditions
 
-Gui_DOC_INSTALL_DIR = Developer/Gui/Reference
-GuiAdditions_DOC_INSTALL_DIR = Developer/Gui/Reference
+# Using xxx_AGSDOC_LOCAL_DIR puts our output in the documentation directory.
+#
+Gui_AGSDOC_INSTALL_BUNDLE = Reference
+Gui_AGSDOC_LOCAL_DIR = ../Documentation/Gui
+Gui_DOC_INSTALL_DIR = Developer/Gui
+GuiAdditions_AGSDOC_INSTALL_BUNDLE = Reference
+GuiAdditions_AGSDOC_LOCAL_DIR = ../Documentation/GuiAdditions
+GuiAdditions_DOC_INSTALL_DIR = Developer/GuiAdditions
 
 Gui_AGSDOC_FILES = ../Documentation/Gui.gsdoc \
 	$(AUTOGSDOC_HEADERS_GUI)
@@ -164,14 +315,9 @@ Gui_AGSDOC_FILES = ../Documentation/Gui.gsdoc \
 GuiAdditions_AGSDOC_FILES = $(AUTOGSDOC_HEADERS_GUIADD) \
 	../Documentation/GuiAdditions.gsdoc
 
-#
-# Hack ... using the -DocumentationDirectory flag overrides the value
-# used by the make package, and puts our output in the documentation
-# directory.
-#
 Gui_AGSDOC_FLAGS = \
-	-MakeFrames YES \
-	-DocumentationDirectory ../Documentation/Gui \
+	-MakeFrames NO \
+	-IndexFile Gui \
 	-HeaderDirectory ../Headers/AppKit \
 	-Declared AppKit \
 	-Standards YES \
@@ -181,13 +327,18 @@ Gui_AGSDOC_FLAGS = \
 	-TypedefsTemplate TypesAndConstants \
 	-VariablesTemplate TypesAndConstants \
 	-WordMap '{\
-	APPKIT_EXPORT=extern;APPKIT_DECLARE="";\
-	DEFINE_RINT_IF_MISSING=""; \
+	APPKIT_EXPORT_CLASS="";\
+	APPKIT_EXPORT=extern;\
+	APPKIT_DECLARE="";\
+	APPKIT_EXTERN=extern;\
+	DEFINE_RINT_IF_MISSING="";\
+	PACKAGE_SCOPE="";\
+	IBOutlet="";\
+	IBAction=void;\
 	}' -Up Gui
 
 GuiAdditions_AGSDOC_FLAGS = \
-	-MakeFrames YES \
-	-DocumentationDirectory ../Documentation/GuiAdditions \
+	-MakeFrames NO \
 	-HeaderDirectory ../Headers/Additions/GNUstepGUI \
 	-Declared GNUstepGUI \
 	-Standards YES \
@@ -197,6 +348,7 @@ GuiAdditions_AGSDOC_FLAGS = \
 	-TypedefsTemplate TypesAndConstants \
 	-VariablesTemplate TypesAndConstants \
 	-WordMap '{\
+	APPKIT_EXPORT_CLASS="";\
 	APPKIT_EXPORT=extern;APPKIT_DECLARE="";\
 	DEFINE_RINT_IF_MISSING=""; \
 	}' -Up GuiAdditions

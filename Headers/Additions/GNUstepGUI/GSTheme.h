@@ -2,7 +2,7 @@
 
    <abstract>Useful/configurable drawing functions</abstract>
 
-   Copyright (C) 2004-2006 Free Software Foundation, Inc.
+   Copyright (C) 2004-2023 Free Software Foundation, Inc.
 
    Author: Adam Fedor <fedor@gnu.org>
    Author: Richard Frith-Macdonald <rfm@gnu.org>
@@ -17,7 +17,7 @@
 
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNUstep
    Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public
@@ -235,6 +235,8 @@
 #import <AppKit/NSTabView.h>
 #import <AppKit/NSPrintPanel.h>
 #import <AppKit/NSPageLayout.h>
+// For window decorator protocol
+#import <GNUstepGUI/GSWindowDecorationView.h>
 
 #if	OS_API_VERSION(GS_API_NONE,GS_API_NONE)
 @class NSArray;
@@ -247,11 +249,16 @@
 @class NSColorWell;
 @class NSImage;
 @class NSMenuItemCell;
+@class NSOutlineView;
 @class NSPopUpButtonCell;
 @class NSMenuView;
 @class NSProgressIndicator;
+@class NSTableColumn;
 @class NSTableHeaderCell;
+@class NSTableView;
 @class NSTabViewItem;
+@class NSPathControl;
+@class NSPathComponentCell;
 @class GSDrawTiles;
 @class GSTitleView;
 
@@ -389,6 +396,22 @@ typedef enum {
   GSThemeSelectedState		/** A control which is selected */
 } GSThemeControlState;
 
+/**
+ * This enumeration is used when selecting the NSTabView.
+ */
+typedef enum {
+  GSTabSelectedLeft,
+  GSTabSelectedRight,
+  GSTabSelectedToUnSelectedJunction,
+  GSTabSelectedFill,
+  GSTabUnSelectedLeft,
+  GSTabUnSelectedRight,
+  GSTabUnSelectedToSelectedJunction,
+  GSTabUnSelectedJunction,
+  GSTabUnSelectedFill,
+  GSTabBackgroundFill
+} GSTabPart;
+
 /** Notification sent when a theme has just become active.<br />
  * The notification is posted by the -activate method.<br />
  * This is primarily for internal use by AppKit controls which
@@ -464,6 +487,7 @@ APPKIT_EXPORT	NSString	*GSThemeWillDeactivateNotification;
   use the appropriate behavior.
   </p>
 */ 
+APPKIT_EXPORT_CLASS
 @interface GSTheme : NSObject
 {
 @private
@@ -958,6 +982,27 @@ APPKIT_EXPORT	NSString	*GSThemeWillDeactivateNotification;
  */
 - (void) drawStepperHighlightDownButton: (NSRect)aRect;
 
+// NSSwitch drawing methods
+- (void) drawSwitchKnob: (NSRect)frame
+               forState: (NSControlStateValue)value
+                enabled: (BOOL)enabled;
+
+
+- (void) drawSwitchBezel: (NSRect)frame
+                forState: (NSControlStateValue)v
+                 enabled: (BOOL)enabled;
+
+- (void) drawSwitchInRect: (NSRect)rect
+                 forState: (NSControlStateValue)state
+                  enabled: (BOOL)enabled;
+
+// NSPathComponentCell
+
+- (void) drawPathComponentCellWithFrame: (NSRect)f
+                                 inView: (NSPathControl *)pc
+                               withCell: (NSPathComponentCell *)cell
+                        isLastComponent: (BOOL)last;
+
 // NSSegmentedControl drawing methods
 
 - (void) drawSegmentedControlSegment: (NSCell *)cell
@@ -977,9 +1022,12 @@ APPKIT_EXPORT	NSString	*GSThemeWillDeactivateNotification;
  * <p>The returned color is used by 
  * -drawBackgroundForMenuView:withFrame:dirtyRect:horizontal:</p>
  * 
- * <p>Can be overridden in subclasses to return a custom color.</p>
+ * <p>Can be overridden in subclasses to return a custom color, but generally
+ * should not.  Instead themes should provide default colors in the
+ * GSThemeDomain (in their Info.plist).</p>
  */
 - (NSColor *) menuBackgroundColor;
+
 /**
  * <p>Returns the color used to draw a menu item background.</p>
  *
@@ -994,11 +1042,14 @@ APPKIT_EXPORT	NSString	*GSThemeWillDeactivateNotification;
  * -drawBorderAndBackgroundForMenuItemCell:withFrame:inView:state:isHorizontal: 
  * and [NSMenuItemCell-backgroundColor].</p>
  * 
- * <p>Can be overridden in subclasses to return a custom color.</p>
+ * <p>Can be overridden in subclasses to return a custom color, but generally
+ * should not.  Instead themes should provide default colors in the
+ * GSThemeDomain (in their Info.plist).</p>
  */
 - (NSColor *) menuItemBackgroundColor;
 - (NSColor *) menuBarBackgroundColor;
 - (NSColor *) menuBarBorderColor;
+
 /**
  * <p>Returns the color used to draw a menu view border.</p>
  *
@@ -1008,9 +1059,12 @@ APPKIT_EXPORT	NSString	*GSThemeWillDeactivateNotification;
  * <p>The returned color is used by 
  * -drawBackgroundForMenuView:withFrame:dirtyRect:horizontal:</p>
  * 
- * <p>Can be overridden in subclasses to return a custom color.</p>
+ * <p>Can be overridden in subclasses to return a custom color, but generally
+ * should not.  Instead themes should provide default colors in the
+ * GSThemeDomain (in their Info.plist).</p>
  */
 - (NSColor *) menuBorderColor;
+
 /**
  * <p>Returns a color to draw each edge in a menu view border.</p>
  *
@@ -1020,7 +1074,9 @@ APPKIT_EXPORT	NSString	*GSThemeWillDeactivateNotification;
  * <p>The returned edge color is used by 
  * -drawBackgroundForMenuView:withFrame:dirtyRect:horizontal:</p>
  * 
- * <p>Can be overridden in subclasses to return a custom color per edge.</p>
+ * <p>Can be overridden in subclasses to return a custom color, but generally
+ * should not.  Instead themes should provide default colors in the
+ * GSThemeDomain (in their Info.plist).</p>
  */
 - (NSColor *) menuBorderColorForEdge: (NSRectEdge)edge 
                         isHorizontal: (BOOL)horizontal;
@@ -1037,7 +1093,9 @@ APPKIT_EXPORT	NSString	*GSThemeWillDeactivateNotification;
  * <p>The returned value used by 
  * -drawBorderAndBackgroundForMenuItemCell:withFrame:inView:state:isHorizontal:</p>
  * 
- * <p>Can be overridden in subclasses.</p>
+ * <p>Can be overridden in subclasses to return a custom color, but generally
+ * should not.  Instead themes should provide default colors in the
+ * GSThemeDomain (in their Info.plist).</p>
  */
 - (BOOL) drawsBorderForMenuItemCell: (NSMenuItemCell *)cell 
                               state: (GSThemeControlState)state
@@ -1078,9 +1136,12 @@ APPKIT_EXPORT	NSString	*GSThemeWillDeactivateNotification;
  * <p>The returned color is used by 
  * -drawSeparatorItemForMenuItemCell:withFrame:inView:isHorizontal:</p>
  * 
- * <p>Can be overridden in subclasses to return a custom color.</p>
+ * <p>Can be overridden in subclasses to return a custom color, but generally
+ * should not.  Instead themes should provide default colors in the
+ * GSThemeDomain (in their Info.plist).</p>
  */
 - (NSColor *) menuSeparatorColor;
+
 /**
  * <p>Returns the left and right inset used to draw a separator line in a
  * menu.</p>
@@ -1090,7 +1151,9 @@ APPKIT_EXPORT	NSString	*GSThemeWillDeactivateNotification;
  * <p>The returned color is used by 
  * -drawSeparatorItemForMenuItemCell:withFrame:inView:isHorizontal:</p>
  * 
- * <p>Can be overridden in subclasses to return a custom value.</p>
+ * <p>Can be overridden in subclasses to return a custom color, but generally
+ * should not.  Instead themes should provide default colors in the
+ * GSThemeDomain (in their Info.plist).</p>
  */
 - (CGFloat) menuSeparatorInset;
 
@@ -1170,6 +1233,8 @@ APPKIT_EXPORT	NSString	*GSThemeWillDeactivateNotification;
 
 - (float) resizebarHeight;
 
+- (float) resizebarNotchWidth;
+
 - (float) titlebarButtonSize;
 
 - (float) titlebarPaddingRight;
@@ -1184,6 +1249,13 @@ APPKIT_EXPORT	NSString	*GSThemeWillDeactivateNotification;
                     state: (int)inputState
                  andTitle: (NSString*)title;
 
+- (void) setFrameForCloseButton: (NSButton *)closeButton
+		       viewSize: (NSSize)viewSize;
+
+- (NSRect) miniaturizeButtonFrameForBounds: (NSRect)bounds;
+
+- (NSRect) closeButtonFrameForBounds: (NSRect)bounds;
+
 - (NSColor *) browserHeaderTextColor;
 
 - (void) drawBrowserHeaderCell: (NSTableHeaderCell*)cell
@@ -1193,9 +1265,21 @@ APPKIT_EXPORT	NSString	*GSThemeWillDeactivateNotification;
 - (NSRect) browserHeaderDrawingRectForCell: (NSTableHeaderCell*)cell
 				 withFrame: (NSRect)rect;
 
+- (CGFloat) tabHeightForType: (NSTabViewType)type;
+
 - (NSRect) tabViewContentRectForBounds: (NSRect)aRect
 			   tabViewType: (NSTabViewType)type
 			       tabView: (NSTabView *)view;
+
+- (NSImage *) imageForTabPart: (GSTabPart)part
+			 type: (NSTabViewType)type;
+
+- (NSRect) tabViewBackgroundRectForBounds: (NSRect)aRect
+			      tabViewType: (NSTabViewType)type;
+
+- (void) drawTabViewBezelRect: (NSRect)aRect
+                  tabViewType: (NSTabViewType)type
+                       inView: (NSView *)view;
 
 - (void) drawTabViewRect: (NSRect)rect
 		  inView: (NSView *)view
@@ -1260,14 +1344,32 @@ APPKIT_EXPORT	NSString	*GSThemeWillDeactivateNotification;
 					inView: (NSView *)view
 			      selectingColumns: (BOOL)selectingColumns;
 
-- (void) drawTableViewRow: (int)rowIndex 
+- (void) drawTableViewRow: (NSInteger)rowIndex 
 		 clipRect: (NSRect)clipRect
-		   inView: (NSView *)view;
+		   inView: (NSTableView *)view;
+
+- (NSRect) drawOutlineCell: (NSTableColumn *)tb
+	       outlineView: (NSOutlineView *)outlineView
+		      item: (id)item
+	       drawingRect: (NSRect)inputRect
+                  rowIndex: (NSInteger)rowIndex;
+
+- (void) drawOutlineViewRow: (NSInteger)rowIndex 
+                   clipRect: (NSRect)clipRect
+		     inView: (NSOutlineView *)view;
+
+- (BOOL) isBoxOpaque: (NSBox *)box;
 
 - (void) drawBoxInClipRect: (NSRect)clipRect
 		   boxType: (NSBoxType)boxType
 		borderType: (NSBorderType)borderType
 		    inView: (NSBox *)box;
+
+/* NSDockTile */
+- (NSColor *) badgeBackgroundColor;
+- (NSColor *) badgeDecorationColor;
+- (NSColor *) badgeTextColor;
+
 @end
 
 /**
@@ -1435,6 +1537,50 @@ withRepeatedImage: (NSImage*)image
  */
 - (void)  updateMenu: (NSMenu *)menu forWindow: (NSWindow *)window;
 - (void) updateAllWindowsWithMenu: (NSMenu *) menu;
+
+/**
+ * Modifies the given NSRect for use by NSMenu to position and size
+ * the displayed menu. The default implementation simply returns
+ * the original NSRect unmodified.
+ */
+- (NSRect) modifyRect: (NSRect)aRect
+	   forMenu: (NSMenu *)aMenu
+	   isHorizontal: (BOOL) horizontal;
+
+/**
+ * Modifies the proposed default width for a menu title in the given NSMenuView. 
+ * The default implementation simply returns the proposed width unmodified.
+ */
+- (CGFloat) proposedTitleWidth: (CGFloat)proposedWidth
+		   forMenuView: (NSMenuView *)aMenuView;
+
+/**
+ * Modifies the proposed key equivalent string for the menu item. The default
+ * implementation simply returns the proposed string unmodified.
+ */
+- (NSString *) keyForKeyEquivalent: (NSString *)aString;
+
+/**
+ * Modifies the proposed menu item title. The default implementation simply
+ * returns the proposed string unmodified.
+ */
+- (NSString *) proposedTitle: (NSString *)title
+		 forMenuItem: (NSMenuItem *)menuItem;
+
+/**
+ * Used by the theme to organize the main menu. The default implementation
+ * organizes the main menu in the same way that NSMenu's old default behaviour
+ * did, generating an "app name" menu for horizontal display.
+ */
+- (void) organizeMenu: (NSMenu *)menu
+	 isHorizontal: (BOOL)horizontal;
+
+/**
+ * Used by the theme to override the proposed menu visibility.  The default
+ * implementation simply returns the proposed visibility unmodified.
+ */
+- (BOOL) proposedVisibility: (BOOL)visible
+	 forMenu: (NSMenu *) menu;
 @end 
 
 @interface GSTheme (OpenSavePanels)
@@ -1452,9 +1598,11 @@ withRepeatedImage: (NSImage*)image
 @end
 
 // Panels which can be overridden by the theme...
+APPKIT_EXPORT_CLASS
 @interface GSPrintPanel : NSPrintPanel
 @end
 
+APPKIT_EXPORT_CLASS
 @interface GSPageLayout : NSPageLayout
 @end
 
@@ -1473,6 +1621,13 @@ withRepeatedImage: (NSImage*)image
 @end
 
 @interface GSTheme (NSWindow)
+
+/**
+ * This method returns the window decorator provided by
+ * the current theme.
+ */
+- (id<GSWindowDecorator>) windowDecorator;
+
 /**
  * This method returns the standard window button for the
  * given mask for the current theme.
@@ -1525,7 +1680,6 @@ withRepeatedImage: (NSImage*)image
  */
 - (NSImage *) highlightedBranchImage;
 @end
-
 
 #endif /* OS_API_VERSION */
 #endif /* _GNUstep_H_GSTheme */

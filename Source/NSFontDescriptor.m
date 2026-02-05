@@ -66,7 +66,7 @@
   return [self fontDescriptorWithFontAttributes:
     [NSDictionary dictionaryWithObjectsAndKeys:
       name, NSFontNameAttribute,
-      [NSString stringWithFormat: @"%f", size], NSFontSizeAttribute,
+      [NSNumber numberWithDouble: size], NSFontSizeAttribute,
       nil]];
 }
 
@@ -110,7 +110,7 @@
 - (NSFontDescriptor*) fontDescriptorWithSize: (CGFloat)size
 {
   return [self fontDescriptorByAddingAttributes:
-    [NSDictionary dictionaryWithObject: [NSString stringWithFormat:@"%f", size]
+    [NSDictionary dictionaryWithObject: [NSNumber numberWithDouble: size]
 				forKey: NSFontSizeAttribute]];
 }
 
@@ -155,7 +155,7 @@
 {
   if ([aCoder allowsKeyedCoding])
     {
-      [aCoder encodeObject: _attributes forKey: @"NSAttributes"];
+      [aCoder encodeObject: _attributes forKey: @"NSFontDescriptorAttributes"];
     }
   else
     {
@@ -167,7 +167,7 @@
 {
   if ([aDecoder allowsKeyedCoding])
     {
-      _attributes = RETAIN([aDecoder decodeObjectForKey: @"NSAttributes"]);
+      _attributes = RETAIN([aDecoder decodeObjectForKey: @"NSFontDescriptorAttributes"]);
     }
   else
     {
@@ -176,7 +176,7 @@
   return self;
 }
 	
-- (void) dealloc;
+- (void) dealloc
 {
   RELEASE(_attributes);
   [super dealloc];

@@ -45,6 +45,7 @@ enum {
 typedef NSInteger NSSplitViewDividerStyle;
 #endif
 
+APPKIT_EXPORT_CLASS
 @interface NSSplitView : NSView
 {
   id	      _delegate;
@@ -57,6 +58,8 @@ typedef NSInteger NSSplitViewDividerStyle;
   BOOL      _isVertical;
   BOOL      _never_displayed_before;
   BOOL      _is_pane_splitter;
+  BOOL      _arrangesAllSubviews;  
+  NSSplitViewDividerStyle _dividerStyle;
 }
 
 - (void) setDelegate: (id)anObject;
@@ -106,7 +109,13 @@ typedef NSInteger NSSplitViewDividerStyle;
 @end
 #endif 
 
+@protocol NSSplitViewDelegate <NSObject>
+#if GS_PROTOCOLS_HAVE_OPTIONAL
+@optional
+#else
+@end
 @interface NSObject (NSSplitViewDelegate)
+#endif
 - (void) splitView: (NSSplitView *)sender 
 resizeSubviewsWithOldSize: (NSSize)oldSize;
 

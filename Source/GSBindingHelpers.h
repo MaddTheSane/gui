@@ -41,6 +41,7 @@
 @public
   NSDictionary *info;
   id src;
+  BOOL inReverseSet;
 }
 
 + (void) exposeBinding: (NSString *)binding forClass: (Class)clazz;
@@ -63,6 +64,7 @@
 - (void) reverseSetValueFor: (NSString *)binding;
 - (id) destinationValue;
 - (id) sourceValueFor: (NSString *)binding;
+- (id) observedObject;
 
 /* Transforms the value with a value transformer, if specified and available,
  * and takes care of any placeholders
@@ -76,6 +78,12 @@
 @end
 
 @interface GSKeyValueAndBinding : GSKeyValueBinding 
+@end
+
+@interface GSObservableArray : NSArray
+{
+  NSArray *_array;
+}
 @end
 
 #endif //_GS_BINDING_HELPER_H

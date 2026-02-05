@@ -26,10 +26,11 @@
    Free Software Foundation, 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.
 */
+
 #ifndef _GNUstep_H_NSTreeNode
 #define _GNUstep_H_NSTreeNode
 
-#import <GNUstepBase/GSVersionMacros.h>
+#import <AppKit/AppKitDefines.h>
 #import <Foundation/NSObject.h>
 
 @class NSArray;
@@ -37,6 +38,7 @@
 @class NSMutableArray;
 
 #if OS_API_VERSION(MAC_OS_X_VERSION_10_5, GS_API_LATEST)
+APPKIT_EXPORT_CLASS
 @interface NSTreeNode : NSObject
 {
   id _representedObject;

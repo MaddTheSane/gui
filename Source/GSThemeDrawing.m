@@ -2,7 +2,7 @@
 
    <abstract>The theme methods for drawing controls</abstract>
 
-   Copyright (C) 2004-2010 Free Software Foundation, Inc.
+   Copyright (C) 2004-2023 Free Software Foundation, Inc.
 
    Author: Adam Fedor <fedor@gnu.org>
    Date: Jan 2004
@@ -33,6 +33,7 @@
 
 #import "AppKit/NSAttributedString.h"
 #import "AppKit/NSBezierPath.h"
+#import "AppKit/NSButton.h"
 #import "AppKit/NSButtonCell.h"
 #import "AppKit/NSBrowser.h"
 #import "AppKit/NSBrowserCell.h"
@@ -42,8 +43,11 @@
 #import "AppKit/NSColorWell.h"
 #import "AppKit/NSGraphics.h"
 #import "AppKit/NSImage.h"
+#import "AppKit/NSImageView.h"
+#import "AppKit/NSKeyValueBinding.h"
 #import "AppKit/NSMenuView.h"
 #import "AppKit/NSMenuItemCell.h"
+#import "AppKit/NSOutlineView.h"
 #import "AppKit/NSParagraphStyle.h"
 #import "AppKit/NSPopUpButtonCell.h"
 #import "AppKit/NSProgressIndicator.h"
@@ -51,17 +55,23 @@
 #import "AppKit/NSScrollView.h"
 #import "AppKit/NSStringDrawing.h"
 #import "AppKit/NSTableView.h"
+#import "AppKit/NSTableCellView.h"
 #import "AppKit/NSTableColumn.h"
 #import "AppKit/NSTableHeaderCell.h"
 #import "AppKit/NSTableHeaderView.h"
+#import "AppKit/NSTableView.h"
 #import "AppKit/NSView.h"
 #import "AppKit/NSTabView.h"
 #import "AppKit/NSTabViewItem.h"
 #import "AppKit/PSOperators.h"
 #import "AppKit/NSSliderCell.h"
+#import "AppKit/NSPathCell.h"
+#import "AppKit/NSPathControl.h"
+#import "AppKit/NSPathComponentCell.h"
 
 #import "GNUstepGUI/GSToolbarView.h"
 #import "GNUstepGUI/GSTitleView.h"
+#import "GSBindingHelpers.h"
 
 /* a border width of 5 gives a reasonable compromise between Cocoa metrics and looking good */
 /* 7.0 gives us the NeXT Look (which is 8 pix wide including the shadow) */
@@ -71,7 +81,12 @@
 - (CGFloat *)_columnOrigins;
 - (void) _willDisplayCell: (NSCell*)cell
 	   forTableColumn: (NSTableColumn *)tb
-		      row: (int)index;
+		      row: (NSInteger)index;
+- (id)_objectValueForTableColumn: (NSTableColumn *)tb
+			     row: (NSInteger)index;
+- (void) _calculatedStartingColumn: (NSInteger *)startingColumn
+		      endingColumn: (NSInteger *)endingColumn
+			inClipRect: (NSRect)clipRect;
 @end
 
 @interface NSCell (Private)
@@ -672,6 +687,45 @@
   return color;
 }
 
+- (NSColor *) badgeBackgroundColor
+{
+  NSColor *color;
+
+  color = [self colorNamed: @"badgeColor"
+                state: GSThemeNormalState];
+  if (color == nil)
+    {
+      color = [NSColor redColor];
+    }
+  return color;
+}
+
+- (NSColor *) badgeDecorationColor
+{
+  NSColor *color;
+
+  color = [self colorNamed: @"badgeColor"
+                state: GSThemeSelectedState];
+  if (color == nil)
+    {
+      color = [NSColor lightGrayColor];
+    }
+  return color;
+}
+
+- (NSColor *) badgeTextColor
+{
+  NSColor *color;
+
+  color = [self colorNamed: @"badgeColor"
+                state: GSThemeHighlightedState];
+  if (color == nil)
+    {
+      color = [NSColor whiteColor];
+    }
+  return color;
+}
+
 - (void) drawToolbarRect: (NSRect)aRect
                    frame: (NSRect)viewFrame
               borderMask: (unsigned int)borderMask
@@ -722,22 +776,20 @@
 - (NSRect) stepperUpButtonRectWithFrame: (NSRect)frame
 {
   NSSize size = [[NSImage imageNamed: @"common_StepperUp"] size];
-  NSRect upRect;
+  NSRect upRect = {{NSMinX(frame), NSMinY(frame)}, {size.width, size.height}};
 
-  upRect.size = size;
-  upRect.origin.x = NSMaxX(frame) - size.width;
-  upRect.origin.y = NSMinY(frame) + ((int)frame.size.height / 2) + 1;
+  upRect.origin.x += ((int)frame.size.width / 2) - ((int)size.width / 2);
+  upRect.origin.y += ((int)frame.size.height / 2);
   return upRect;
 }
 
 - (NSRect) stepperDownButtonRectWithFrame: (NSRect)frame
 {
   NSSize size = [[NSImage imageNamed: @"common_StepperDown"] size];
-  NSRect downRect;
+  NSRect downRect = {{NSMinX(frame), NSMinY(frame)}, {size.width, size.height}};
 
-  downRect.size = size;
-  downRect.origin.x = NSMaxX(frame) - size.width;
-  downRect.origin.y = NSMinY(frame) + ((int)frame.size.height / 2) - size.height + 1;
+  downRect.origin.x += ((int)frame.size.width / 2) - ((int)size.width / 2);
+  downRect.origin.y += ((int)frame.size.height / 2) - size.height;
   return downRect;
 }
 
@@ -814,6 +866,221 @@
     [self drawStepperHighlightDownButton: downRect];
   else
     [self drawStepperDownButton: downRect];
+}
+
+// NSSwitch drawing methods
+
+- (void) drawSwitchBezel: (NSRect)frame
+                forState: (NSControlStateValue)v
+                 enabled: (BOOL)enabled
+{
+  NSBezierPath *p;
+  NSPoint point;
+  CGFloat radius;
+  NSColor *backgroundColor;
+  
+  if (enabled == NO)
+    {
+      backgroundColor = [NSColor disabledControlTextColor];
+    }
+  else if (NSControlStateValueOn != v)
+    {
+      backgroundColor = [NSColor windowBackgroundColor]; // offColor
+    }
+  else
+    {
+      backgroundColor = [NSColor selectedControlColor]; // onColor
+    }
+  
+  // make smaller than enclosing frame
+  frame = NSInsetRect(frame, 4, 4);
+  radius = frame.size.height / 2.0;
+  point = frame.origin;
+  point.x += radius;
+  point.y += radius - 0.5;
+
+  // Draw initial path to enclose the button...
+  // left half-circle
+  p = [NSBezierPath bezierPath];
+  [p appendBezierPathWithArcWithCenter: point
+				radius: radius
+			    startAngle: 90.0
+			      endAngle: 270.0];
+
+  // line to first point and right halfcircle
+  point.x += frame.size.width - frame.size.height;
+  [p appendBezierPathWithArcWithCenter: point
+				radius: radius
+			    startAngle: 270.0
+			      endAngle: 90.0];
+  [p closePath];
+
+  // fill with background color
+  [backgroundColor set];
+  [p fill];
+
+  // and stroke rounded button
+  [[NSColor shadowColor] set];
+  [p stroke];
+
+  // Add highlights...
+  point = frame.origin;
+  point.x += radius - 0.5;
+  point.y += radius - 0.5;
+  p = [NSBezierPath bezierPath];
+  [p setLineWidth: 1.0];
+  [p appendBezierPathWithArcWithCenter: point
+				radius: radius
+			    startAngle: 135.0
+			      endAngle: 270.0];
+
+  // line to first point and right halfcircle
+  point.x += frame.size.width - frame.size.height;
+  [p appendBezierPathWithArcWithCenter: point
+				radius: radius
+			    startAngle: 270.0
+			      endAngle: 315.0];
+  [[NSColor controlLightHighlightColor] set];
+  [p stroke];
+}
+
+- (void) drawSwitchKnob: (NSRect)frame
+               forState: (NSControlStateValue)value
+                enabled: (BOOL)enabled
+{
+  NSColor *backgroundColor = enabled ? [NSColor windowBackgroundColor] : [NSColor disabledControlTextColor];
+  NSBezierPath *oval;
+  NSRect rect = NSZeroRect;
+  CGFloat w = (frame.size.width / 2) - 2;
+  CGFloat h = frame.size.height - 6;
+  CGFloat y = frame.origin.y + 2;
+  CGFloat radius = frame.size.height / 2.0;
+
+  [backgroundColor set];
+  if (value == NSControlStateValueOff)
+    {
+      rect = NSMakeRect(frame.origin.x + 4,
+                        y,
+                        w,
+                        h);
+    }
+  else
+    {
+      rect = NSMakeRect(frame.origin.x + ((frame.size.width - 2 * radius) + 2), // ((frame.size.width - w) - 2)
+                        y,
+                        w,
+                        h);
+    }
+  
+  
+  oval = [NSBezierPath bezierPathWithOvalInRect: NSInsetRect(rect, 1, 1)];
+  
+  // fill oval with background color
+  [backgroundColor set];
+  [oval fill];
+
+  // and stroke rounded button
+  [[NSColor shadowColor] set];
+  [oval stroke];
+}
+
+- (void) drawSwitchInRect: (NSRect)rect
+                 forState: (NSControlStateValue)state
+                  enabled: (BOOL)enabled
+{
+  // Draw the well bezel
+  [self drawSwitchBezel: rect
+               forState: state
+                enabled: enabled];
+
+  // Draw the knob
+  [self drawSwitchKnob: rect
+              forState: state
+               enabled: enabled];
+        
+}
+
+// NSPathComponentCell
+
+- (void) drawPathComponentCellWithFrame: (NSRect)frame
+                                 inView: (NSPathControl *)pc
+                               withCell: (NSPathComponentCell *)cell
+                        isLastComponent: (BOOL)last
+{
+  NSImage *img = [cell image];
+  NSURL *url = [cell URL];
+  NSString *string = [[url path] lastPathComponent];
+  NSRect textFrame = frame;
+  NSRect imgFrame = frame;
+  NSRect arrowFrame = frame;
+  NSImage *arrowImage = [NSImage imageNamed: @"NSMenuArrow"];
+  NSPathStyle style= [pc pathStyle];
+  NSRect newFrame = frame;
+
+  if (style == NSPathStylePopUp)
+    {
+      newFrame = [pc frame];
+      
+      // Reset coodinates.
+      newFrame.origin.x = 0.0;
+      newFrame.origin.y = 0.0;
+      
+      // Use control frame...
+      textFrame = newFrame;
+      imgFrame = newFrame;
+      arrowFrame = newFrame;    
+    }
+  
+  // Modify positions...
+  imgFrame.size.width = 17.0;
+  imgFrame.size.height = 17.0;
+  imgFrame.origin.x += 2.0;
+  imgFrame.origin.y += 2.0;
+  textFrame.origin.x += imgFrame.size.width + 5.0; // the width of the image plus a few pixels.
+  textFrame.origin.y += 5.0; // center with the image...
+  arrowFrame.origin.x += newFrame.size.width - 17.0; 
+  arrowFrame.size.width = 8.0;
+  arrowFrame.size.height = 8.0;
+  arrowFrame.origin.y += 5.0;
+      
+  if (style== NSPathStyleStandard || style== NSPathStyleNavigationBar)
+    {
+      // Draw the image...
+      [img drawInRect: imgFrame];
+      
+      // Draw the text...
+      [[NSColor textColor] set]; 
+      [string drawAtPoint: textFrame.origin
+           withAttributes: nil];
+      
+      // Draw the arrow...
+      if (last == NO)
+        {
+          [arrowImage drawInRect: arrowFrame];
+        }
+    }
+  else if (style == NSPathStylePopUp)
+    {
+      if (last == YES)
+        {
+          arrowImage = [NSImage imageNamed: @"common_ArrowDown"];
+
+          // Draw border...
+          [[NSColor controlShadowColor] set];
+          NSFrameRectWithWidth(newFrame, 1.0);
+          
+          // Draw the image...
+          [img drawInRect: imgFrame];
+          
+          // Draw the text...
+          [[NSColor textColor] set]; 
+          [string drawAtPoint: textFrame.origin
+               withAttributes: nil];
+          
+          // Draw the arrow...
+          [arrowImage drawInRect: arrowFrame];
+        }
+    }
 }
 
 // NSSegmentedControl drawing methods
@@ -1446,8 +1713,6 @@ static NSImage *spinningImages[MaxCount];
 
   if (tiles == nil)
     { 
-      [[NSColor blackColor] set];
-      NSRectFill(divide);
       rect = [self drawDarkButton: rect withClip: aRect];
       [[NSColor controlShadowColor] set];
       NSRectFill(rect);
@@ -1502,6 +1767,7 @@ static NSImage *spinningImages[MaxCount];
 /* These include the black border. */
 #define TITLE_HEIGHT 23.0
 #define RESIZE_HEIGHT 9.0
+#define RESIZE_NOTCH_WIDTH 30.0
 #define TITLEBAR_BUTTON_SIZE 15.0
 #define TITLEBAR_PADDING_TOP 4.0
 #define TITLEBAR_PADDING_RIGHT 4.0
@@ -1515,6 +1781,11 @@ static NSImage *spinningImages[MaxCount];
 - (float) resizebarHeight
 {
   return RESIZE_HEIGHT;
+}
+
+- (float) resizebarNotchWidth
+{
+  return RESIZE_NOTCH_WIDTH;
 }
 
 - (float) titlebarButtonSize
@@ -1694,6 +1965,8 @@ static NSDictionary *titleTextAttributes[3] = {nil, nil, nil};
 - (void) drawResizeBarRect: (NSRect)resizeBarRect
 {
   GSDrawTiles *tiles;
+  float resizebarNotchWidth = [self resizebarNotchWidth];
+
   tiles = [self tilesNamed: @"GSWindowResizeBar" state: GSThemeNormalState];
   if (tiles == nil)
     {
@@ -1719,21 +1992,21 @@ static NSDictionary *titleTextAttributes[3] = {nil, nil, nil};
 
 
       /* Only draw the notches if there's enough space. */
-      if (resizeBarRect.size.width < 30 * 2)
+      if (resizeBarRect.size.width < resizebarNotchWidth * 2)
 	return;
 
       [[NSColor darkGrayColor] set];
-      PSmoveto(27.5, 1.0);
-      PSlineto(27.5, RESIZE_HEIGHT - 2.0);
-      PSmoveto(resizeBarRect.size.width - 28.5, 1.0);
-      PSlineto(resizeBarRect.size.width - 28.5, RESIZE_HEIGHT - 2.0);
+      PSmoveto(resizebarNotchWidth - 3 + 0.5, 1.0);
+      PSlineto(resizebarNotchWidth - 3 + 0.5, RESIZE_HEIGHT - 2.0);
+      PSmoveto(resizeBarRect.size.width - (resizebarNotchWidth - 2 + 0.5), 1.0);
+      PSlineto(resizeBarRect.size.width - (resizebarNotchWidth - 2 + 0.5), RESIZE_HEIGHT - 2.0);
       PSstroke();
 
       [[NSColor whiteColor] set];
-      PSmoveto(28.5, 1.0);
-      PSlineto(28.5, RESIZE_HEIGHT - 2.0);
-      PSmoveto(resizeBarRect.size.width - 27.5, 1.0);
-      PSlineto(resizeBarRect.size.width - 27.5, RESIZE_HEIGHT - 2.0);
+      PSmoveto(resizebarNotchWidth - 2 + 0.5, 1.0);
+      PSlineto(resizebarNotchWidth - 2 + 0.5, RESIZE_HEIGHT - 2.0);
+      PSmoveto(resizeBarRect.size.width - (resizebarNotchWidth - 3 + 0.5), 1.0);
+      PSlineto(resizeBarRect.size.width - (resizebarNotchWidth - 3 + 0.5), RESIZE_HEIGHT - 2.0);
       PSstroke();
     }
   else
@@ -1810,6 +2083,38 @@ static NSDictionary *titleTextAttributes[3] = {nil, nil, nil};
     }
 }
 
+- (void) setFrameForCloseButton: (NSButton *)closeButton
+		       viewSize: (NSSize)viewSize
+{
+  NSSize buttonSize = [[closeButton image] size];
+  buttonSize = NSMakeSize(buttonSize.width + 3, buttonSize.height + 3);
+  
+  [closeButton setFrame: NSMakeRect(viewSize.width - buttonSize.width - 4,
+                   		   (viewSize.height - buttonSize.height) / 2,
+  		                    buttonSize.width, 
+				    buttonSize.height)];
+}
+
+- (NSRect) closeButtonFrameForBounds: (NSRect)bounds
+{
+  GSTheme *theme = [GSTheme theme];
+
+  return NSMakeRect(bounds.size.width - [theme titlebarButtonSize] - 
+				   [theme titlebarPaddingRight], bounds.size.height - 
+				   [theme titlebarButtonSize] - [theme titlebarPaddingTop], 
+				   [theme titlebarButtonSize], [theme titlebarButtonSize]);
+}
+
+- (NSRect) miniaturizeButtonFrameForBounds: (NSRect)bounds
+{
+  GSTheme *theme = [GSTheme theme];
+
+  return NSMakeRect([theme titlebarPaddingLeft], 
+		    bounds.size.height - [theme titlebarButtonSize] - [theme titlebarPaddingTop], 
+		    [theme titlebarButtonSize],
+		    [theme titlebarButtonSize]);
+}
+
 - (NSColor *) browserHeaderTextColor
 {
   NSColor *color;
@@ -1858,19 +2163,6 @@ static NSDictionary *titleTextAttributes[3] = {nil, nil, nil};
       return result;
     }
 }
-
-typedef enum {
-  GSTabSelectedLeft,
-  GSTabSelectedRight,
-  GSTabSelectedToUnSelectedJunction,
-  GSTabSelectedFill,
-  GSTabUnSelectedLeft,
-  GSTabUnSelectedRight,
-  GSTabUnSelectedToSelectedJunction,
-  GSTabUnSelectedJunction,
-  GSTabUnSelectedFill,
-  GSTabBackgroundFill
-} GSTabPart;
 
 - (NSImage *)imageForTabPart: (GSTabPart)part type: (NSTabViewType)type
 {
@@ -2243,7 +2535,7 @@ typedef enum {
   [self drawTabViewBezelRect: aRect
  		 tabViewType: type
  		      inView: view];
- 
+
   if (type == NSBottomTabsBezelBorder
       || type == NSTopTabsBezelBorder)
     {
@@ -2646,6 +2938,7 @@ typedef enum {
       NSScroller *vertScroller = [scrollView verticalScroller];
       NSScroller *horizScroller = [scrollView horizontalScroller];
       CGFloat scrollerWidth = [NSScroller scrollerWidth];
+      NSRect scrollerFrame;
 
       [color set];
 
@@ -2653,43 +2946,39 @@ typedef enum {
 	{
 	  NSInterfaceStyle style;
 	  CGFloat xpos;
-	  CGFloat scrollerHeight = bounds.size.height;
-
+          
+          scrollerFrame = [vertScroller frame];
+          
 	  style = NSInterfaceStyleForKey(@"NSScrollViewInterfaceStyle", nil);
 	  if (style == NSMacintoshInterfaceStyle
 	      || style == NSWindows95InterfaceStyle)
 	    {
-              xpos = [vertScroller frame].origin.x - 1.0;
+              xpos = scrollerFrame.origin.x - 1.0;
 	    }
 	  else
 	    {
-              xpos = [vertScroller frame].origin.x + scrollerWidth;
+              xpos = scrollerFrame.origin.x + scrollerWidth;
 	    }
-          NSRectFill(NSMakeRect(xpos, [vertScroller frame].origin.y - 1.0, 
-                                1.0, scrollerHeight + 1.0));
+          NSRectFill(NSMakeRect(xpos, scrollerFrame.origin.y, 
+                                1.0, scrollerFrame.size.height));
 	}
 
       if ([scrollView hasHorizontalScroller])
 	{
 	  CGFloat ypos;
-	  CGFloat scrollerY = [horizScroller frame].origin.y;
-	  CGFloat scrollerLength = bounds.size.width;
 
-	  if ([scrollView hasVerticalScroller])
-	    {
-	      scrollerLength -= [NSScroller scrollerWidth];
-	    }
+          scrollerFrame = [horizScroller frame];
  
 	  if ([scrollView isFlipped])
 	    {
-	      ypos = scrollerY - 1.0;
+	      ypos = scrollerFrame.origin.y - 1.0;
 	    }
 	  else
 	    {
-	      ypos = scrollerY + scrollerWidth + 1.0;
+	      ypos = scrollerFrame.origin.y + scrollerWidth + 1.0;
 	    }
-          NSRectFill(NSMakeRect([horizScroller frame].origin.x - 1.0, ypos,
-                                scrollerLength + 1.0, 1.0));
+          NSRectFill(NSMakeRect([horizScroller frame].origin.x, ypos,
+                                scrollerFrame.size.width, 1.0));
 	}
     }
 }
@@ -2997,7 +3286,7 @@ typedef enum {
     {
       endingRow = numberOfRows - 1;
     }
-  //  NSLog(@"drawRect : %d-%d", startingRow, endingRow);
+  // NSLog(@"drawRect : %ld-%ld", startingRow, endingRow);
   {
     SEL sel = @selector(drawRow:clipRect:);
     void (*imp)(id, SEL, NSInteger, NSRect);
@@ -3020,7 +3309,6 @@ typedef enum {
   NSInteger numberOfColumns = [tableView numberOfColumns];
   NSIndexSet *selectedRows = [tableView selectedRowIndexes];
   NSIndexSet *selectedColumns = [tableView selectedColumnIndexes];
-  NSColor *backgroundColor = [tableView backgroundColor];
 
   // Set the fill color
   {
@@ -3031,18 +3319,10 @@ typedef enum {
 
     if (selectionColor == nil)
       {
-	// Switch to the alternate color of the backgroundColor is white.
-	if([backgroundColor isEqual: [NSColor whiteColor]])
-	  {
-	    selectionColor = [NSColor colorWithCalibratedRed: 0.86
-						       green: 0.92
-							blue: 0.99
-						       alpha: 1.0];
-	  }
-	else
-	  {
-	    selectionColor = [NSColor whiteColor];
-	  }
+	selectionColor = [NSColor colorWithCalibratedRed: 1.0
+						   green: 1.0
+						    blue: 1.0
+						   alpha: 1.0];
       }
     [selectionColor set];
   }
@@ -3103,17 +3383,10 @@ typedef enum {
     }
 }
 
-- (void) drawTableViewRow: (int)rowIndex 
+- (void) drawTableViewRow: (NSInteger)rowIndex 
 		 clipRect: (NSRect)clipRect
-		   inView: (NSView *)view
+		   inView: (NSTableView *)tableView
 {
-  NSTableView *tableView = (NSTableView *)view;
-  // int numberOfRows = [tableView numberOfRows];
-  NSInteger numberOfColumns = [tableView numberOfColumns];
-  // NSIndexSet *selectedRows = [tableView selectedRowIndexes];
-  // NSColor *backgroundColor = [tableView backgroundColor];
-  id dataSource = [tableView dataSource];
-  CGFloat *columnOrigins = [tableView _columnOrigins];
   NSInteger editedRow = [tableView editedRow];
   NSInteger editedColumn = [tableView editedColumn];
   NSArray *tableColumns = [tableView tableColumns];
@@ -3123,49 +3396,21 @@ typedef enum {
   NSRect drawingRect;
   NSCell *cell;
   NSInteger i;
-  CGFloat x_pos;
   const BOOL rowSelected = [[tableView selectedRowIndexes] containsIndex: rowIndex];
   NSColor *tempColor = nil;
   NSColor *selectedTextColor = [self colorNamed: @"highlightedTableRowTextColor"
 					  state: GSThemeNormalState];
 
-  if (dataSource == nil)
-    {
-      return;
-    }
-
-  /* Using columnAtPoint: here would make it called twice per row per drawn 
-     rect - so we avoid it and do it natively */
-
-  /* Determine starting column as fast as possible */
-  x_pos = NSMinX (clipRect);
-  i = 0;
-  while ((i < numberOfColumns) && (x_pos > columnOrigins[i]))
-    {
-      i++;
-    }
-  startingColumn = (i - 1);
-
-  if (startingColumn == -1)
-    startingColumn = 0;
-
-  /* Determine ending column as fast as possible */
-  x_pos = NSMaxX (clipRect);
-  // Nota Bene: we do *not* reset i
-  while ((i < numberOfColumns) && (x_pos > columnOrigins[i]))
-    {
-      i++;
-    }
-  endingColumn = (i - 1);
-
-  if (endingColumn == -1)
-    endingColumn = numberOfColumns - 1;
-
+  [tableView _calculatedStartingColumn: &startingColumn
+			  endingColumn: &endingColumn
+			    inClipRect: clipRect];
+  
   /* Draw the row between startingColumn and endingColumn */
   for (i = startingColumn; i <= endingColumn; i++)
     {
       const BOOL columnSelected = [tableView isColumnSelected: i];
       const BOOL cellSelected = (rowSelected || columnSelected);
+
       tb = [tableColumns objectAtIndex: i];
       cell = [tb dataCellForRow: rowIndex];
       [tableView _willDisplayCell: cell
@@ -3177,9 +3422,8 @@ typedef enum {
         }
       else
         {
-          [cell setObjectValue: [dataSource tableView: tableView
-                                            objectValueForTableColumn: tb
-                                                  row: rowIndex]];
+          [cell setObjectValue: [tableView _objectValueForTableColumn: tb
+                                                                  row: rowIndex]];
         }
       drawingRect = [tableView frameOfCellAtColumn: i
 			       row: rowIndex];
@@ -3209,6 +3453,150 @@ typedef enum {
       if (i == editedColumn && rowIndex == editedRow)
 	[cell _setInEditing: NO];
     }
+}
+
+- (NSRect) drawOutlineCell: (NSTableColumn *)tb
+	       outlineView: (NSOutlineView *)outlineView
+		      item: (id)item
+	       drawingRect: (NSRect)inputRect
+		  rowIndex: (NSInteger)rowIndex
+{
+  NSRect drawingRect = inputRect;
+  NSImage *image = nil;
+  NSInteger level = 0;
+  CGFloat indentationFactor = 0.0;
+  CGFloat indentationPerLevel = [outlineView indentationPerLevel];
+  NSCell *imageCell = nil;
+  NSRect imageRect;
+  id delegate = [outlineView delegate];
+
+  // display the correct arrow...
+  if ([outlineView isItemExpanded: item])
+    {
+      image = [NSImage imageNamed: @"common_ArrowDownH"];
+    }
+  else
+    {
+      image = [NSImage imageNamed: @"common_ArrowRightH"];
+    }
+
+  if (![outlineView isExpandable: item])
+    {
+      image = AUTORELEASE([[NSImage alloc] initWithSize: NSMakeSize(14.0,14.0)]);
+    }
+
+  level = [outlineView levelForItem: item];
+  indentationFactor = indentationPerLevel * level;
+  imageCell = [[NSCell alloc] initImageCell: image];
+  imageRect = [outlineView frameOfOutlineCellAtRow: rowIndex];
+
+  if ([delegate respondsToSelector: @selector(outlineView:willDisplayOutlineCell:forTableColumn:item:)])
+    {
+      [delegate outlineView: outlineView
+		willDisplayOutlineCell: imageCell
+	     forTableColumn: tb
+		       item: item];
+    }
+
+  /* Do not indent if the delegate set the image to nil. */
+  if ([imageCell image])
+    {
+      imageRect.size.width = [image size].width;
+      imageRect.size.height = [image size].height + 5;
+      [imageCell drawWithFrame: imageRect inView: outlineView];
+      drawingRect.origin.x
+	+= indentationFactor + imageRect.size.width + 5;
+      drawingRect.size.width
+	-= indentationFactor + imageRect.size.width + 5;
+    }
+  else
+    {
+      drawingRect.origin.x += indentationFactor;
+      drawingRect.size.width -= indentationFactor;
+    }
+
+  RELEASE(imageCell);
+
+  return drawingRect;
+}
+
+- (void) drawOutlineViewRow: (NSInteger)rowIndex 
+		   clipRect: (NSRect)clipRect
+		     inView: (NSOutlineView *)outlineView
+{
+  NSInteger editedRow = [outlineView editedRow];
+  NSInteger editedColumn = [outlineView editedColumn];
+  NSArray *tableColumns = [outlineView tableColumns];
+  NSInteger numberOfRows = [outlineView numberOfRows];
+  NSInteger startingColumn;
+  NSInteger endingColumn;
+  NSRect drawingRect;
+  NSInteger i;
+  NSTableColumn *outlineTableColumn = [outlineView outlineTableColumn];
+
+  /* Using columnAtPoint: here would make it called twice per row per drawn
+     rect - so we avoid it and do it natively */
+
+  if (rowIndex >= numberOfRows)
+    {
+      return;
+    }
+
+  [outlineView _calculatedStartingColumn: &startingColumn
+			    endingColumn: &endingColumn
+			      inClipRect: clipRect];
+  
+  /* Draw the row between startingColumn and endingColumn */
+  for (i = startingColumn; i <= endingColumn; i++)
+    {
+      id item = [outlineView itemAtRow: rowIndex];
+      NSTableColumn *tb = [tableColumns objectAtIndex: i];
+      NSCell *cell = [outlineView preparedCellAtColumn: i row: rowIndex];
+
+      [outlineView _willDisplayCell: cell
+		     forTableColumn: tb
+				row: rowIndex];
+      if (i == editedColumn && rowIndex == editedRow)
+        {
+          [cell _setInEditing: YES];
+          [cell setShowsFirstResponder: YES];
+        }
+      else
+        {
+	  id value = [outlineView _objectValueForTableColumn: tb
+							 row: rowIndex];
+	  [cell setObjectValue: value];
+        }
+
+      drawingRect = [outlineView frameOfCellAtColumn: i
+						 row: rowIndex];
+
+      if (tb == outlineTableColumn)
+        {
+	  drawingRect = [self drawOutlineCell: tb
+				  outlineView: outlineView
+					 item: item
+				  drawingRect: drawingRect
+				     rowIndex: rowIndex];
+	}
+      
+      [cell drawWithFrame: drawingRect inView: outlineView];
+      if (i == editedColumn && rowIndex == editedRow)
+        {
+          [cell _setInEditing: NO];
+          [cell setShowsFirstResponder: NO];
+        }
+    }  
+}
+
+- (BOOL) isBoxOpaque: (NSBox *)box
+{
+  if ([box boxType] == NSBoxCustom)
+    {
+      return ![box isTransparent];
+    }
+
+  return YES;
 }
 
 - (void) drawBoxInClipRect: (NSRect)clipRect

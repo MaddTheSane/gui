@@ -2,7 +2,7 @@
 
    <abstract>The abstract cell class</abstract>
 
-   Copyright (C) 1996-2012 Free Software Foundation, Inc.
+   Copyright (C) 1996-2012,2019 Free Software Foundation, Inc.
 
    Author:  Scott Christley <scottc@net-community.com>
    Date: 1996
@@ -27,10 +27,12 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, see <http://www.gnu.org/licenses/> or write to the 
-   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   If not, see <http://www.gnu.org/licenses/> or write to the
+   Free Software Foundation, 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.
 */
+
+#include <math.h>
 
 #import "config.h"
 #import <Foundation/NSCoder.h>
@@ -103,7 +105,7 @@ static NSColor *dtxtCol;
 {
   if (self == [NSCell class])
     {
-      [self setVersion: 3];
+      [self setVersion: 4];
       colorClass = [NSColor class];
       cellClass = [NSCell class];
       fontClass = [NSFont class];
@@ -134,7 +136,7 @@ static NSColor *dtxtCol;
   return NSFocusRingTypeDefault;
 }
 
-/**<p>This class method returns NO. This method should be overrided by 
+/**<p>This class method returns NO. This method should be overrided by
    subclasses.</p>
  */
 + (BOOL) prefersTrackingUntilMouseUp
@@ -150,8 +152,8 @@ static NSColor *dtxtCol;
   return [self initTextCell: @""];
 }
 
-/**<p>Initializes and returns a new NSCell with a NSImage <var>anImage</var>. 
-   This method sets the image position to <ref type="type" 
+/**<p>Initializes and returns a new NSCell with a NSImage <var>anImage</var>.
+   This method sets the image position to <ref type="type"
    id="NSCellImagePosition">NSImageOnly</ref> and the cell's type to
    <ref type="type" id="NSCellType">NSImageCellType</ref>.</p>
    <p>See Also: -initTextCell: </p>
@@ -187,7 +189,7 @@ static NSColor *dtxtCol;
 
   return self;
 }
-/**<p>Initializes and returns a new NSCell with a NSString aString. 
+/**<p>Initializes and returns a new NSCell with a NSString aString.
    This method sets the cell's type to <ref type="type" id="NSCellType">
    NSTextCellType</ref>.</p>
    <p>See Also: -initImageCell: </p>
@@ -339,26 +341,39 @@ static NSColor *dtxtCol;
     }
 }
 
-- (void) setObjectValue: (id)object 
+- (void) setObjectValue: (id)object
 {
   id newContents;
-  
+
   ASSIGN (_object_value, object);
-  
-  if (_formatter == nil) 
+  if (_formatter == nil)
     {
       if (object == nil || [object isKindOfClass: [NSString class]] == YES)
         {
           newContents = object;
           _cell.contents_is_attributed_string = NO;
           _cell.has_valid_object_value = YES;
+
+	  // If we are in single line mode, trim the new line characters
+	  if(_cell.uses_single_line_mode == YES)
+	    {
+	      newContents = [object stringByTrimmingCharactersInSet:
+				      [NSCharacterSet newlineCharacterSet]];
+	    }
         }
       else if ([object isKindOfClass: [NSAttributedString class]] == YES)
         {
           newContents = object;
           _cell.contents_is_attributed_string = YES;
           _cell.has_valid_object_value = YES;
-        }
+
+	  // If we are in single line mode, trim the new line characters
+	  if(_cell.uses_single_line_mode == YES)
+	    {
+	      newContents = [object stringByTrimmingCharactersInSet:
+				      [NSCharacterSet newlineCharacterSet]];
+	    }
+	}
       else if ([_object_value respondsToSelector: @selector(attributedStringValue)])
         {
           newContents = [_object_value attributedStringValue];
@@ -367,7 +382,7 @@ static NSColor *dtxtCol;
         }
       else if ([_object_value respondsToSelector: @selector(stringValue)])
         {
-          // If the thing that was assigned is not a string, but 
+          // If the thing that was assigned is not a string, but
           // responds to stringValue then get that.
           newContents = [_object_value stringValue];
           _cell.contents_is_attributed_string = NO;
@@ -399,7 +414,7 @@ static NSColor *dtxtCol;
 
 
 /**<p>Sets the NSCell's value to aDouble.</p>
- *<p>See Also: -doubleValue</p> 
+ *<p>See Also: -doubleValue</p>
  */
 - (void) setDoubleValue: (double)aDouble
 {
@@ -412,16 +427,16 @@ static NSColor *dtxtCol;
 }
 
 /**
- *<p>Sets the NSCell's value to a aFloat. This used for example in 
+ *<p>Sets the NSCell's value to a aFloat. This used for example in
  NSSliderCell</p>
- *<p>See Also: -floatValue</p> 
+ *<p>See Also: -floatValue</p>
  */
 - (void) setFloatValue: (float)aFloat
 {
   NSNumber *number;
 
-  // NB: GNUstep can set a float value for an image cell. 
-  // NSSliderCell is an example of it! 
+  // NB: GNUstep can set a float value for an image cell.
+  // NSSliderCell is an example of it!
 
   number = [NSNumber numberWithFloat: aFloat];
   [self setObjectValue: number];
@@ -430,13 +445,13 @@ static NSColor *dtxtCol;
 
 /**
  *<p>Sets the NSCell's value to anInt.</p>
- *<p>See Also: -intValue</p> 
+ *<p>See Also: -intValue</p>
  */
 - (void) setIntValue: (int)anInt
 {
   NSNumber *number;
 
-  // NB: GNUstep can set an int value for an image cell. 
+  // NB: GNUstep can set an int value for an image cell.
 
   number = [NSNumber numberWithInt: anInt];
   [self setObjectValue: number];
@@ -444,21 +459,21 @@ static NSColor *dtxtCol;
 
 /**
  *<p>Sets the NSCell's value to anInt.</p>
- *<p>See Also: -integerValue</p> 
+ *<p>See Also: -integerValue</p>
  */
 - (void) setIntegerValue: (NSInteger)anInt
 {
   NSNumber *number;
 
-  // NB: GNUstep can set an int value for an image cell. 
+  // NB: GNUstep can set an int value for an image cell.
 
   number = [NSNumber numberWithInteger: anInt];
   [self setObjectValue: number];
 }
 
-/**<p>Sets the cell's value to a NSString. 
+/**<p>Sets the cell's value to a NSString.
    The NSCell's type is set to NSTextCellType if needed</p>
-   <p>See Also: -stringValue</p> 
+   <p>See Also: -stringValue</p>
  */
 - (void) setStringValue: (NSString*)aString
 {
@@ -466,7 +481,7 @@ static NSColor *dtxtCol;
      nil.  */
   if (aString == nil)
     {
-      NSDebugMLLog (@"MacOSXCompatibility", 
+      NSDebugMLLog (@"MacOSXCompatibility",
                     @"Attempt to use nil as string value");
     }
 
@@ -482,9 +497,9 @@ static NSColor *dtxtCol;
   else
     {
       id newObjectValue;
-      
-      if ([_formatter getObjectValue: &newObjectValue 
-                      forString: aString 
+
+      if ([_formatter getObjectValue: &newObjectValue
+                      forString: aString
                       errorDescription: NULL])
         {
           [self setObjectValue: newObjectValue];
@@ -511,30 +526,30 @@ static NSColor *dtxtCol;
     case NSCellEditable: return _cell.is_editable;
     case NSCellHighlighted: return _cell.is_highlighted;
     case NSCellIsBordered: return _cell.is_bordered;
-    case NSCellAllowsMixedState: return _cell.allows_mixed_state; 
+    case NSCellAllowsMixedState: return _cell.allows_mixed_state;
 
       /*
-        case NSPushInCell: return 0; 
-        case NSChangeGrayCell: return 0; 
-        case NSCellLightsByContents: return 0; 
-        case NSCellLightsByGray: return 0; 
-        case NSChangeBackgroundCell: return 0; 
-        case NSCellLightsByBackground: return 0; 
-        case NSCellChangesContents: return 0;  
-        case NSCellIsInsetButton: return 0;  
+        case NSPushInCell: return 0;
+        case NSChangeGrayCell: return 0;
+        case NSCellLightsByContents: return 0;
+        case NSCellLightsByGray: return 0;
+        case NSChangeBackgroundCell: return 0;
+        case NSCellLightsByBackground: return 0;
+        case NSCellChangesContents: return 0;
+        case NSCellIsInsetButton: return 0;
       */
-    case NSCellHasOverlappingImage: 
+    case NSCellHasOverlappingImage:
       {
         return _cell.image_position == NSImageOverlaps;
       }
-    case NSCellHasImageHorizontal: 
+    case NSCellHasImageHorizontal:
       {
-        return (_cell.image_position == NSImageRight) 
+        return (_cell.image_position == NSImageRight)
           || (_cell.image_position == NSImageLeft);
       }
-    case NSCellHasImageOnLeftOrBottom: 
+    case NSCellHasImageOnLeftOrBottom:
       {
-        return (_cell.image_position == NSImageBelow) 
+        return (_cell.image_position == NSImageBelow)
           || (_cell.image_position == NSImageLeft);
       }
     default:
@@ -543,7 +558,7 @@ static NSColor *dtxtCol;
         break;
       }
     }
-  
+
   return 0;
 }
 
@@ -676,7 +691,7 @@ static NSColor *dtxtCol;
     {
       return;
     }
-  
+
   _cell.type = aType;
   switch (_cell.type)
     {
@@ -698,15 +713,15 @@ static NSColor *dtxtCol;
 }
 
 /**<p>Returns the cell's type. Returns NSNullCellType if the
-  cell's type flag is set to NSImageCellType and if the cell's image 
-  is nil. See <ref type="type" id="NSCellType">NSCellType</ref> for more 
+  cell's type flag is set to NSImageCellType and if the cell's image
+  is nil. See <ref type="type" id="NSCellType">NSCellType</ref> for more
   information.</p><p>See Also -setType:</p>
  */
 - (NSCellType) type
 {
   if (_cell.type == NSImageCellType && _cell_image == nil)
     return NSNullCellType;
-    
+
   return _cell.type;
 }
 
@@ -724,7 +739,7 @@ static NSColor *dtxtCol;
  */
 - (void) setEnabled: (BOOL)flag
 {
-  _cell.is_disabled = !flag;  
+  _cell.is_disabled = !flag;
 }
 
 /**<p>Returns whether the NSCell has a bezeled border. By default a NSCell
@@ -735,7 +750,7 @@ static NSColor *dtxtCol;
   return _cell.is_bezeled;
 }
 
-/**<p>Returns whether the NSCell has a border. By default a NSCell has 
+/**<p>Returns whether the NSCell has a border. By default a NSCell has
    border</p><p>See Also: -setBordered: -setBezeled: -isBezeled</p>
  */
 - (BOOL) isBordered
@@ -750,7 +765,7 @@ static NSColor *dtxtCol;
   return NO;
 }
 
-/**<p>Sets whether the cell has a bezeled border. 
+/**<p>Sets whether the cell has a bezeled border.
  If this method is called, the bordered flag is turn off.
  By default a NSCell has no bezeled border</p>
  <p>See Also: -isBezeled -setBordered: -isBordered</p>
@@ -761,7 +776,7 @@ static NSColor *dtxtCol;
   _cell.is_bordered = NO;
 }
 
-/**<p>Sets whether the cell has a border.  If this method is called, 
+/**<p>Sets whether the cell has a border.  If this method is called,
  the bezeled flag is turn off. By default a NSCell has no border</p>
  <p>See Also: -isBordered -setBezeled: -isBezeled</p>
  */
@@ -802,7 +817,7 @@ static NSColor *dtxtCol;
     {
       _cell.state = NSOffState;
     }
-  else 
+  else
     {
       _cell.state = NSMixedState;
     }
@@ -862,9 +877,9 @@ static NSColor *dtxtCol;
   [self setState: [self nextState]];
 }
 
-/**<p>Returns the alignment of the text used in the NSCell. See 
+/**<p>Returns the alignment of the text used in the NSCell. See
    <ref type="type" id="NSTextAlignment">NSTextAlignment</ref> for more
-   informations. By default the text alignment is <ref type="type" 
+   informations. By default the text alignment is <ref type="type"
    id="NSTextAlignment">NSJustifiedTextAlignment</ref></p>
    <p>See Also: -setAlignment:</p>
  */
@@ -889,7 +904,7 @@ static NSColor *dtxtCol;
   return _cell.is_editable;
 }
 
-/**<p>Returns whether the cell is selectable. This method returns YES if 
+/**<p>Returns whether the cell is selectable. This method returns YES if
    the cell is selectable or editable. NO otherwise</p>
    <p>See Also: -setSelectable: -isEditable -setEditable: </p>
  */
@@ -906,7 +921,7 @@ static NSColor *dtxtCol;
   return _cell.is_scrollable;
 }
 
-/**<p>Sets the alignment of the text. See <ref type="type" 
+/**<p>Sets the alignment of the text. See <ref type="type"
    id="NSTextAlignment">NSTextAlignment</ref>.</p><p>See Also: -alignment </p>
  */
 - (void) setAlignment: (NSTextAlignment)mode
@@ -923,7 +938,7 @@ static NSColor *dtxtCol;
   /*
    * The cell_editable flag is also checked to see if the cell is
    * selectable so turning edit on also turns selectability on (until
-   * edit is turned off again).  
+   * edit is turned off again).
    */
   _cell.is_editable = flag;
 }
@@ -992,9 +1007,9 @@ static NSColor *dtxtCol;
   if (_formatter != nil)
     {
       id newObjectValue;
-      
-      if ([_formatter getObjectValue: &newObjectValue 
-                      forString: [attribStr string] 
+
+      if ([_formatter getObjectValue: &newObjectValue
+                      forString: [attribStr string]
                       errorDescription: NULL] == YES)
         {
           [self setObjectValue: newObjectValue];
@@ -1021,7 +1036,7 @@ static NSColor *dtxtCol;
       NSAttributedString *attrStr;
 
       attributes = [self _nonAutoreleasedTypingAttributes];
-      attrStr = [_formatter attributedStringForObjectValue: _object_value 
+      attrStr = [_formatter attributedStringForObjectValue: _object_value
                             withDefaultAttributes: attributes];
       RELEASE(attributes);
       if (attrStr != nil)
@@ -1116,7 +1131,7 @@ static NSColor *dtxtCol;
   return NULL;
 }
 
-/** <p>Implemented by subclasses to set the action method. 
+/** <p>Implemented by subclasses to set the action method.
     The NSCell implementation raises a NSInternalInconsistencyException</p>
  <p>See Also: -action -setTarget: -target</p>
 */
@@ -1136,7 +1151,7 @@ static NSColor *dtxtCol;
               format: @"attempt to set a target in an NSCell"];
 }
 
-/**<p>Implemented by subclass to return the target object. 
+/**<p>Implemented by subclass to return the target object.
    The NSCell implementation returns nil</p>
    <p>See Also: -setTarget: -setAction: -action</p>
  */
@@ -1164,7 +1179,7 @@ static NSColor *dtxtCol;
     {
       _action_mask |= NSPeriodicMask;
     }
-  else 
+  else
     {
       _action_mask &= ~NSPeriodicMask;
     }
@@ -1181,7 +1196,7 @@ static NSColor *dtxtCol;
   return previousMask;
 }
 
-/**<p>Returns the NSCell's image if the NSCell's type is <ref type="type" 
+/**<p>Returns the NSCell's image if the NSCell's type is <ref type="type"
    id="NSCellType">NSImageCellType</ref>,
    returns nil otherwise.</p>
    <p>See Also: -setImage: -setType: -type</p>
@@ -1196,24 +1211,24 @@ static NSColor *dtxtCol;
     return nil;
 }
 
-/**<p>Sets the NSCell's image to anImage. This method sets the cell's type 
+/**<p>Sets the NSCell's image to anImage. This method sets the cell's type
    to NSImageCellType if needed. Raises an NSInvalidArgumentException if
    the anImage is not an NSImage (sub)class. The new image is retained and the
    old one is released</p><p>See Also: -image</p>
  */
 - (void) setImage: (NSImage*)anImage
 {
-  if (anImage) 
+  if (anImage)
     {
       NSAssert ([anImage isKindOfClass: imageClass],
                 NSInvalidArgumentException);
     }
-  
+
   if (_cell.type != NSImageCellType)
     {
       [self setType: NSImageCellType];
     }
-  
+
   ASSIGN (_cell_image, anImage);
 }
 
@@ -1227,7 +1242,7 @@ static NSColor *dtxtCol;
               format: @"attempt to set a tag in an NSCell"];
 }
 
-/**<p>Implemented by subclasses to Return the tag. 
+/**<p>Implemented by subclasses to Return the tag.
    The NSCell implementation returns -1 </p><p>See Also: -setTag:</p>
  */
 - (NSInteger) tag
@@ -1255,7 +1270,7 @@ static NSColor *dtxtCol;
           [format appendString: @"#"];
         }
     }
-  else 
+  else
     {
       while (leftDigits--)
         {
@@ -1274,7 +1289,7 @@ static NSColor *dtxtCol;
   RELEASE(formatter);
 }
 
-- (void) setFormatter: (NSFormatter*)newFormatter 
+- (void) setFormatter: (NSFormatter*)newFormatter
 {
   ASSIGN(_formatter, newFormatter);
 }
@@ -1305,12 +1320,12 @@ static NSColor *dtxtCol;
   if ((_formatter != nil) && ![aString isEqualToString: @""])
     {
       id newObjectValue;
-      
-      return [_formatter getObjectValue: &newObjectValue 
-                         forString: aString 
+
+      return [_formatter getObjectValue: &newObjectValue
+                         forString: aString
                          errorDescription: NULL];
     }
-  else 
+  else
     {
       return YES;
     }
@@ -1319,7 +1334,7 @@ static NSColor *dtxtCol;
 /*
  * Menu
  */
-- (void) setMenu: (NSMenu*)aMenu 
+- (void) setMenu: (NSMenu*)aMenu
 {
   ASSIGN (_menu, aMenu);
 }
@@ -1329,8 +1344,8 @@ static NSColor *dtxtCol;
   return _menu;
 }
 
-- (NSMenu*) menuForEvent: (NSEvent*)anEvent 
-                  inRect: (NSRect)cellFrame 
+- (NSMenu*) menuForEvent: (NSEvent*)anEvent
+                  inRect: (NSRect)cellFrame
                   ofView: (NSView*)aView
 {
   return [self menu];
@@ -1368,7 +1383,7 @@ static NSColor *dtxtCol;
   return _cell.is_disabled == NO && _cell.refuses_first_responder == NO;
 }
 
-- (void) setShowsFirstResponder: (BOOL)flag 
+- (void) setShowsFirstResponder: (BOOL)flag
 {
   _cell.shows_first_responder = flag;
 }
@@ -1385,10 +1400,9 @@ static NSColor *dtxtCol;
   if (r.length > 0)
     {
       NSUInteger location = r.location;
-      
-      
-      [self setTitle: [[aString substringToIndex: location] 
-                        stringByAppendingString: 
+
+      [self setTitle: [[aString substringToIndex: location]
+                        stringByAppendingString:
                           [aString substringFromIndex: NSMaxRange(r)]]];
       // TODO: We should underline this character
       [self setMnemonicLocation: location];
@@ -1406,7 +1420,7 @@ static NSColor *dtxtCol;
   return [c substringWithRange: NSMakeRange (location, 1)];
 }
 
-- (void) setMnemonicLocation: (NSUInteger)location 
+- (void) setMnemonicLocation: (NSUInteger)location
 {
   _cell.mnemonic_location = location;
 }
@@ -1435,7 +1449,7 @@ static NSColor *dtxtCol;
 {
   NSView *cv = [self controlView];
 
-  if (cv != nil) 
+  if (cv != nil)
     [self performClickWithFrame: [cv bounds] inView: cv];
 }
 
@@ -1479,18 +1493,18 @@ static NSColor *dtxtCol;
 
   [self setNextState];
 
-  if (controlView != nil)
-    {  
+  if ((controlView != nil) && [controlView canDraw])
+    {
       NSWindow *cvWin = [controlView window];
       NSDate *limit = [NSDate dateWithTimeIntervalSinceNow: 0.1];
 
       [controlView lockFocus];
       [self highlight: YES withFrame: cellFrame inView: controlView];
       [cvWin flushWindow];
-      
+
       // Wait approx 1/10 seconds
       [[NSRunLoop currentRunLoop] runUntilDate: limit];
-      
+
       [self highlight: NO withFrame: cellFrame inView: controlView];
       [cvWin flushWindow];
       [controlView unlockFocus];
@@ -1564,36 +1578,34 @@ static NSColor *dtxtCol;
   ASSIGN (_represented_object, anObject);
 }
 
-/** <p>Returns YES. Subclasses should overrided this method if you want
-    stop tracking the mouse. This method is call in the
-    -trackMouse:inRect:ofView:untilMouseUp: main loop.</p>
-    <p>See Also: -trackMouse:inRect:ofView:untilMouseUp:</p>
- */
-- (BOOL) continueTracking: (NSPoint)lastPoint
-                       at: (NSPoint)currentPoint
-                   inView: (NSView*)controlView
+- (NSBackgroundStyle)backgroundStyle
 {
-  return YES;
+  return(_cell.background_style);
 }
 
-/**<p>Returns the mouse flags. This flags are usally sets in 
+- (void)setBackgroundStyle:(NSBackgroundStyle)backgroundStyle
+{
+  _cell.background_style = backgroundStyle;
+}
+
+/**<p>Returns the mouse flags. This flags are usally sets in
    the -trackMouse:inRect:ofView:untilMouseUp: method</p>
  */
 - (NSInteger) mouseDownFlags
-{ 
+{
   return _mouse_down_flags;
 }
 
 /**<p>Gets the NSCell's <var>delay</var> and the <var>interval</var>
    parameters used when NSCell sends continouly action messages.
-   The NSCell implementation sets both <var>delay</var> and <var>interval</var>
-   to 0.1.</p>
+   The NSCell implementation sets <var>delay</var> to 0.2 and <var>interval</var>
+   to 0.025.</p>
    <p>See Also: -trackMouse:inRect:ofView:untilMouseUp:</p>
  */
 - (void) getPeriodicDelay: (float*)delay interval: (float*)interval
 {
-  *delay = 0.1;
-  *interval = 0.1;
+  *delay = 0.2;
+  *interval = 0.025;
 }
 
 /**<p>Returns whether tracking starts. The NSCell implementation
@@ -1605,11 +1617,34 @@ static NSColor *dtxtCol;
  */
 - (BOOL) startTrackingAt: (NSPoint)startPoint inView: (NSView*)controlView
 {
-  // If the point is in the view then yes start tracking
-  if ([controlView mouse: startPoint inRect: [controlView bounds]])
-    return YES;
+  if ([self isContinuous] || (_action_mask & NSLeftMouseDraggedMask))
+    {
+      return YES;
+    }
   else
-    return NO;
+    {
+      return NO;
+    }
+}
+
+/** <p>Returns whether the mouse dragging should continue for the cell.
+    Subclasses should overrided this method if you want
+    stop tracking the mouse. This method is call in the
+    -trackMouse:inRect:ofView:untilMouseUp: main loop.</p>
+    <p>See Also: -trackMouse:inRect:ofView:untilMouseUp:</p>
+ */
+- (BOOL) continueTracking: (NSPoint)lastPoint
+                       at: (NSPoint)currentPoint
+                   inView: (NSView*)controlView
+{
+  if ([self isContinuous] || (_action_mask & NSLeftMouseDraggedMask))
+    {
+      return YES;
+    }
+  else
+    {
+      return NO;
+    }
 }
 
 /**<p>Default implementation of this method in NSCell does nothing.</p>
@@ -1632,139 +1667,132 @@ static NSColor *dtxtCol;
     | NSRightMouseDraggedMask;
   NSPoint location = [theEvent locationInWindow];
   NSPoint point = [controlView convertPoint: location fromView: nil];
-  float delay;
-  float interval;
   NSPoint last_point = point;
-  BOOL done;
-  BOOL mouseWentUp;
+  BOOL mouseWentUp = NO;
+  BOOL tracking;
   unsigned periodCount = 0;
 
   NSDebugLLog(@"NSCell", @"cell start tracking in rect %@ initial point %f %f",
              NSStringFromRect(cellFrame), point.x, point.y);
 
   _mouse_down_flags = [theEvent modifierFlags];
+
   if (![self isEnabled])
     {
       return NO;
     }
 
-  if (![self startTrackingAt: point inView: controlView])
+  if (![controlView mouse: point inRect: cellFrame])
     {
+      // point is not in cell
       return NO;
     }
 
-  if (![controlView mouse: point inRect: cellFrame])
-    return NO; // point is not in cell
+  tracking = [self startTrackingAt: point inView: controlView];
 
-  if ((_action_mask & NSLeftMouseDownMask) 
-      && [theEvent type] == NSLeftMouseDown)
-    [self _sendActionFrom: controlView];
+  if (_action_mask & NSEventMaskFromType([theEvent type]))
+    {
+      [self _sendActionFrom: controlView];
+    }
 
   if ([self isContinuous])
     {
+      float delay;
+      float interval;
+
       [self getPeriodicDelay: &delay interval: &interval];
       [NSEvent startPeriodicEventsAfterDelay: delay withPeriod: interval];
       event_mask |= NSPeriodicMask;
     }
 
   NSDebugLLog(@"NSCell", @"cell get mouse events\n");
-  mouseWentUp = NO;
-  done = NO;
   if (theEvent != [NSApp currentEvent])
-    theEvent = [NSApp currentEvent];
+    {
+      theEvent = [NSApp currentEvent];
+    }
   else
-    theEvent = [theApp nextEventMatchingMask: event_mask
-                       untilDate: [NSDate distantFuture]
-                       inMode: NSEventTrackingRunLoopMode
-                       dequeue: YES];
-                 
-  while (!done)
+    {
+      theEvent = [theApp nextEventMatchingMask: event_mask
+                                     untilDate: [NSDate distantFuture]
+                                        inMode: NSEventTrackingRunLoopMode
+                                       dequeue: YES];
+    }
+
+  while (YES)
     {
       NSEventType eventType;
-      BOOL pointIsInCell;
 
       eventType = [theEvent type];
 
-      if (eventType != NSPeriodic || periodCount == 4)
-        {
-          last_point = point;
-          if (eventType == NSPeriodic)
-            {
-              NSWindow *w = [controlView window];
-
-              /*
-               * Too many periodic events in succession - 
-               * update the mouse location and reset the counter.
-               */
-              location = [w mouseLocationOutsideOfEventStream];
-              periodCount = 0;
-            }
-          else
-            {
-              location = [theEvent locationInWindow];
-            }
-          point = [controlView convertPoint: location fromView: nil];
-          NSDebugLLog(@"NSCell", @"location %f %f\n", location.x, location.y);
-          NSDebugLLog(@"NSCell", @"point %f %f\n", point.x, point.y);
-        }
-      else
-        {
-          periodCount++;
-          NSDebugLLog (@"NSCell", @"cell got a periodic event");
-        }
-
-      if (![controlView mouse: point inRect: cellFrame])
-        {
-          NSDebugLLog(@"NSCell", @"point not in cell frame\n");
-
-          pointIsInCell = NO;        
-          if (flag == NO) 
-            {
-              NSDebugLLog(@"NSCell", @"cell return immediately\n");
-              done = YES;
-            }
-        }
-      else
-        {
-          pointIsInCell = YES;
-        }
-
-      if (!done && ![self continueTracking: last_point    // should continue
-                                        at: point         // tracking?
-                                    inView: controlView])
-        {
-          NSDebugLLog(@"NSCell", @"cell stop tracking\n");
-          done = YES;
-        }
-      
       // Did the mouse go up?
       if (eventType == NSLeftMouseUp)
         {
           NSDebugLLog(@"NSCell", @"cell mouse went up\n");
           mouseWentUp = YES;
-          done = YES;
+          break;
+        }
+      else if (eventType == NSPeriodic)
+        {
+          NSDebugLLog (@"NSCell", @"cell got a periodic event");
+          if (periodCount == 4)
+            {
+              NSWindow *w = [controlView window];
+
+              /*
+               * Too many periodic events in succession -
+               * update the mouse location and reset the counter.
+               */
+              location = [w mouseLocationOutsideOfEventStream];
+              last_point = point;
+              point = [controlView convertPoint: location fromView: nil];
+              periodCount = 0;
+            }
+          else
+            {
+              periodCount++;
+            }
         }
       else
         {
-          if (pointIsInCell && ((eventType == NSLeftMouseDragged
-                          && (_action_mask & NSLeftMouseDraggedMask))
-                          || ((eventType == NSPeriodic)
-                          && (_action_mask & NSPeriodicMask))))
-            [self _sendActionFrom: controlView];
+          location = [theEvent locationInWindow];
+          last_point = point;
+          point = [controlView convertPoint: location fromView: nil];
         }
-      
-      if (!done)
-        theEvent = [theApp nextEventMatchingMask: event_mask
-                                       untilDate: [NSDate distantFuture]
-                                          inMode: NSEventTrackingRunLoopMode
-                                         dequeue: YES];
+
+      if (!flag && ![controlView mouse: point inRect: cellFrame])
+        {
+          NSDebugLLog(@"NSCell", @"point not in cell frame\n");
+          break;
+        }
+
+      if (tracking)
+        {
+          // should continue tracking?
+          tracking = [self continueTracking: last_point
+                                         at: point
+                                     inView: controlView];
+          NSDebugLLog(@"NSCell", @"cell continue tracking %d\n", tracking);
+        }
+
+      if (_action_mask & NSEventMaskFromType([theEvent type]))
+        {
+          [self _sendActionFrom: controlView];
+        }
+
+      theEvent = [theApp nextEventMatchingMask: event_mask
+                                     untilDate: [NSDate distantFuture]
+                                        inMode: NSEventTrackingRunLoopMode
+                                       dequeue: YES];
     }
 
-  // Hook called when stop tracking
-  [self stopTracking: last_point
-                  at: point
-              inView: controlView
-           mouseIsUp: mouseWentUp];
+  if (tracking)
+    {
+      // Hook called when stop tracking
+      [self stopTracking: last_point
+                      at: point
+                  inView: controlView
+               mouseIsUp: mouseWentUp];
+    }
 
   if ([self isContinuous])
     {
@@ -1774,19 +1802,24 @@ static NSColor *dtxtCol;
   if (mouseWentUp)
     {
       [self setNextState];
-      if ((_action_mask & NSLeftMouseUpMask))
-        [self _sendActionFrom: controlView];
+      if (_action_mask & NSEventMaskFromType([theEvent type]))
+        {
+          [self _sendActionFrom: controlView];
+        }
     }
 
-  // Return YES only if the mouse went up within the cell
+  // Return YES only if the mouse went up within the cell or flag was true
   if (mouseWentUp && (flag || [controlView mouse: point inRect: cellFrame]))
     {
       NSDebugLLog(@"NSCell", @"mouse went up in cell\n");
       return YES;
     }
-
-  NSDebugLLog(@"NSCell", @"mouse did not go up in cell\n");
-  return NO; // Otherwise return NO
+  else
+    {
+      // Otherwise return NO
+      NSDebugLLog(@"NSCell", @"mouse did not go up in cell\n");
+      return NO;
+    }
 }
 
 - (NSUInteger) hitTestForEvent: (NSEvent*)event
@@ -1795,7 +1828,7 @@ static NSColor *dtxtCol;
 {
   if (_cell.type == NSImageCellType)
     {
-      if ((_cell_image != nil) && 
+      if ((_cell_image != nil) &&
           NSMouseInRect([controlView convertPoint: [event locationInWindow]
                                          fromView: nil],
                         [self imageRectForBounds: [controlView bounds]],
@@ -1862,7 +1895,7 @@ static NSColor *dtxtCol;
     }
 }
 
-/**<p>Implemented by subclasses to returns the key equivalent. 
+/**<p>Implemented by subclasses to returns the key equivalent.
    The NSCell implementation returns an empty NSString. </p>
  */
 - (NSString*) keyEquivalent
@@ -1879,11 +1912,11 @@ static NSColor *dtxtCol;
 }
 
 /**Returns the minimun size needed to display the NSCell.
-   This size is calculate by adding : 
+   This size is calculate by adding :
    <list>
    <item> the borders (plain or bezeled) size</item>
    <item> the spacing between the border and inside the cell</item>
-   <item> the TODO ... if the cell is type  of NSTextCellType 
+   <item> the TODO ... if the cell is type  of NSTextCellType
    or the image size if the cell has a NSImageCellType type.</item>
    </list>
   <p>This method  returns NSZeroSize if the cell has a NSNullCellType type
@@ -1902,10 +1935,10 @@ static NSColor *dtxtCol;
     aType = NSBezelBorder;
   else
     aType = NSNoBorder;
-    
+
   borderSize = [[GSTheme theme] sizeForBorderType: aType];
 
-  // Add spacing between border and inside 
+  // Add spacing between border and inside
   if (_cell.is_bordered || _cell.is_bezeled)
     {
       borderSize.height += 1;
@@ -1952,7 +1985,7 @@ static NSColor *dtxtCol;
   // Add in border size
   s.width += 2 * borderSize.width;
   s.height += 2 * borderSize.height;
-  
+
   return s;
 }
 
@@ -1983,7 +2016,7 @@ static NSColor *dtxtCol;
     aType = NSBezelBorder;
   else
     aType = NSNoBorder;
-    
+
   borderSize = [[GSTheme theme] sizeForBorderType: aType];
   return NSInsetRect(theRect, borderSize.width, borderSize.height);
 }
@@ -1995,8 +2028,8 @@ static NSColor *dtxtCol;
   if (_cell.type == NSImageCellType)
     {
       NSRect frame = [self drawingRectForBounds: theRect];
-      
-      // Add spacing between border and inside 
+
+      // Add spacing between border and inside
       if (_cell.is_bordered || _cell.is_bezeled)
         {
           frame.origin.x += 3;
@@ -2019,8 +2052,8 @@ static NSColor *dtxtCol;
   if (_cell.type == NSTextCellType)
     {
       NSRect frame = [self drawingRectForBounds: theRect];
-      
-      // Add spacing between border and inside 
+
+      // Add spacing between border and inside
       if (_cell.is_bordered || _cell.is_bezeled)
         {
           frame.origin.x += 3;
@@ -2093,7 +2126,7 @@ static NSColor *dtxtCol;
             NSPoint position;
             NSRect drawingRect = [self imageRectForBounds: cellFrame];
             NSRect rect;
-           
+
             size = [_cell_image size];
             position.x = MAX(NSMidX(drawingRect) - (size.width/2.),0.);
             position.y = MAX(NSMidY(drawingRect) - (size.height/2.),0.);
@@ -2173,8 +2206,8 @@ static NSColor *dtxtCol;
       /*
        * NB: This has a visible effect only if subclasses override
        * drawWithFrame:inView: to draw something special when the
-       * cell is highlighted. 
-       * NSCell simply draws border+text/image and makes no highlighting, 
+       * cell is highlighted.
+       * NSCell simply draws border+text/image and makes no highlighting,
        * for easier subclassing.
        */
       if ([self isOpaque] == NO)
@@ -2310,7 +2343,7 @@ static NSColor *dtxtCol;
   _cell.in_editing = YES;
 }
 
-/**<p>Ends any text editing. This method sets the text object's delegate 
+/**<p>Ends any text editing. This method sets the text object's delegate
    to nil, and remove the NSClipView and the text object used for editing</p>
  <p>See Also:  -editWithFrame:inView:editor:delegate:event:</p>
  */
@@ -2321,7 +2354,7 @@ static NSColor *dtxtCol;
   _cell.in_editing = NO;
   [textObject setString: @""];
   [textObject setDelegate: nil];
-  
+
   clipView = (NSClipView*)[textObject superview];
   if ([clipView isKindOfClass: [NSClipView class]])
     {
@@ -2381,7 +2414,7 @@ static NSColor *dtxtCol;
         range: NSMakeRange(selStart, selLength)];
 }
 
-- (BOOL) sendsActionOnEndEditing 
+- (BOOL) sendsActionOnEndEditing
 {
   return _cell.sends_action_on_end_editing;
 }
@@ -2445,7 +2478,7 @@ static NSColor *dtxtCol;
       cFlags |= (_action_mask & NSLeftMouseDraggedMask) ?  0x100 : 0;
       cFlags |= (_action_mask & NSLeftMouseDownMask) ?  0x40000 : 0;
       cFlags |= [self isContinuous] ? 0x80000 : 0;
-      cFlags |= [self isScrollable] ? 0x100000 : 0; 
+      cFlags |= [self isScrollable] ? 0x100000 : 0;
       cFlags |= [self isSelectable] ? 0x200000 : 0;
       cFlags |= [self isBezeled] ? 0x400000 : 0;
       cFlags |= [self isBordered] ? 0x800000 : 0;
@@ -2455,8 +2488,10 @@ static NSColor *dtxtCol;
       cFlags |= [self isHighlighted] ? 0x40000000 : 0;
       cFlags |= ([self state] == NSOnState) ? 0x80000000 : 0;
       [aCoder encodeInt: cFlags forKey: @"NSCellFlags"];
-      
+
       // flags part 2
+      cFlags2 |= ([self usesSingleLineMode] ? 0x40 : 0);
+      cFlags2 |= (([self allowsUndo] == NO) ? 0x1000 : 0);
       cFlags2 |= ([self controlTint] << 5);
       cFlags2 |= ([self lineBreakMode] << 9);
       cFlags2 |= ([self controlSize] << 17);
@@ -2467,7 +2502,7 @@ static NSColor *dtxtCol;
       cFlags2 |= [self importsGraphics] ? 0x20000000 : 0;
       cFlags2 |= [self allowsEditingTextAttributes] ? 0x40000000 : 0;
       [aCoder encodeInt: cFlags2 forKey: @"NSCellFlags2"];
-          
+
       if (_cell.type == NSTextCellType)
         {
           // font and formatter.
@@ -2475,7 +2510,7 @@ static NSColor *dtxtCol;
             {
               [aCoder encodeObject: [self font] forKey: @"NSSupport"];
             }
-          
+
           if ([self formatter])
             {
               [aCoder encodeObject: [self formatter] forKey: @"NSFormatter"];
@@ -2489,8 +2524,8 @@ static NSColor *dtxtCol;
   else
     {
       BOOL flag;
-      unsigned int tmp_int;
-      
+      NSUInteger tmp_uint;
+
       [aCoder encodeObject: _contents];
       [aCoder encodeObject: _cell_image];
       [aCoder encodeObject: _font];
@@ -2531,37 +2566,39 @@ static NSColor *dtxtCol;
       [aCoder encodeValueOfObjCType: @encode(BOOL) at: &flag];
       flag = [self wraps];
       [aCoder encodeValueOfObjCType: @encode(BOOL) at: &flag];
-      tmp_int = _cell.text_align;
-      [aCoder encodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      tmp_int = _cell.type;
-      [aCoder encodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      tmp_int = _cell.image_position;
-      [aCoder encodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      tmp_int = _cell.entry_type;
-      [aCoder encodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
+      tmp_uint = _cell.text_align;
+      encode_NSUInteger(aCoder, &tmp_uint);
+      tmp_uint = _cell.type;
+      encode_NSUInteger(aCoder, &tmp_uint);
+      tmp_uint = _cell.image_position;
+      encode_NSUInteger(aCoder, &tmp_uint);
+      tmp_uint = _cell.entry_type;
+      encode_NSUInteger(aCoder, &tmp_uint);
       // FIXME: State may be -1, why do we encode it as unsigned?
-      tmp_int = _cell.state;
-      [aCoder encodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      tmp_int = _cell.mnemonic_location;
-      [aCoder encodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      [aCoder encodeValueOfObjCType: @encode(NSUInteger) at: &_mouse_down_flags];
-      [aCoder encodeValueOfObjCType: @encode(NSUInteger) at: &_action_mask];
+      tmp_uint = _cell.state;
+      encode_NSUInteger(aCoder, &tmp_uint);
+      tmp_uint = _cell.mnemonic_location;
+      encode_NSUInteger(aCoder, &tmp_uint);
+      encode_NSUInteger(aCoder, &_mouse_down_flags);
+      encode_NSUInteger(aCoder, &_action_mask);
       [aCoder encodeValueOfObjCType: @encode(id) at: &_formatter];
       [aCoder encodeValueOfObjCType: @encode(id) at: &_menu];
       [aCoder encodeValueOfObjCType: @encode(id) at: &_represented_object];
 
-      tmp_int = _cell.allows_undo;
-      [aCoder encodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      tmp_int = _cell.line_break_mode;
-      [aCoder encodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      tmp_int = _cell.control_tint;
-      [aCoder encodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      tmp_int = _cell.control_size;
-      [aCoder encodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      tmp_int = _cell.focus_ring_type;
-      [aCoder encodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      tmp_int = _cell.base_writing_direction;
-      [aCoder encodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
+      tmp_uint = _cell.allows_undo;
+      encode_NSUInteger(aCoder, &tmp_uint);
+      tmp_uint = _cell.line_break_mode;
+      encode_NSUInteger(aCoder, &tmp_uint);
+      tmp_uint = _cell.control_tint;
+      encode_NSUInteger(aCoder, &tmp_uint);
+      tmp_uint = _cell.control_size;
+      encode_NSUInteger(aCoder, &tmp_uint);
+      tmp_uint = _cell.focus_ring_type;
+      encode_NSUInteger(aCoder, &tmp_uint);
+      tmp_uint = _cell.base_writing_direction;
+      encode_NSUInteger(aCoder, &tmp_uint);
+      tmp_uint = _cell.uses_single_line_mode;
+      encode_NSUInteger(aCoder, &tmp_uint);
     }
 }
 
@@ -2585,13 +2622,13 @@ static NSColor *dtxtCol;
           self = [self init];
           [self setObjectValue: contents];
         }
-      
+
       if ([aDecoder containsValueForKey: @"NSCellFlags"])
         {
           unsigned long cFlags;
           NSUInteger mask = 0;
           cFlags = [aDecoder decodeIntForKey: @"NSCellFlags"];
-          
+
           [self setFocusRingType: (cFlags & 0x3)];
           [self setShowsFirstResponder: ((cFlags & 0x4) == 0x4)];
           // This bit flag is the other way around!
@@ -2610,7 +2647,16 @@ static NSColor *dtxtCol;
           [self setSelectable: ((cFlags & 0x200000) == 0x200000)];
           [self setBezeled: ((cFlags & 0x400000) == 0x400000)];
           [self setBordered: ((cFlags & 0x800000) == 0x800000)];
-          [self setType: ((cFlags & 0xC000000) >> 26)];
+	  if (contents == nil)
+	    {
+	      //
+	      // If the contents aren't set (the contents determine the type), 
+	      // get it from the flags.  This prevents the type from being
+	      // accidentally reset on some platforms (mainly WIN32) after 
+	      // the contents are set.
+	      //
+	      [self setType: ((cFlags & 0xC000000) >> 26)];
+	    }
           [self setEditable: ((cFlags & 0x10000000) == 0x10000000)];
           // This bit flag is the other way around!
           [self setEnabled: ((cFlags & 0x20000000) != 0x20000000)];
@@ -2620,8 +2666,9 @@ static NSColor *dtxtCol;
       if ([aDecoder containsValueForKey: @"NSCellFlags2"])
         {
           int cFlags2;
-      
+
           cFlags2 = [aDecoder decodeIntForKey: @"NSCellFlags2"];
+	  [self setUsesSingleLineMode: (cFlags2 & 0x40)];
           [self setControlTint: ((cFlags2 & 0xE0) >> 5)];
 	  [self setLineBreakMode: ((cFlags2 & 0xE00) >> 9)];
           [self setControlSize: ((cFlags2 & 0xE0000) >> 17)];
@@ -2648,14 +2695,14 @@ static NSColor *dtxtCol;
       if ([aDecoder containsValueForKey: @"NSFormatter"])
         {
           NSFormatter *formatter = [aDecoder decodeObjectForKey: @"NSFormatter"];
-            
+
           [self setFormatter: formatter];
         }
     }
   else
     {
       BOOL flag, wraps;
-      unsigned int tmp_int;
+      NSUInteger tmp_uint;
       id formatter, menu;
       int version = [aDecoder versionForClassName: @"NSCell"];
 
@@ -2698,21 +2745,20 @@ static NSColor *dtxtCol;
       /* The wraps attribute has been superseded by lineBreakMode. However,
 	 we may need it to set lineBreakMode when reading old archives. */
       wraps = flag;
-      [aDecoder decodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      _cell.text_align = tmp_int;
-      [aDecoder decodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      _cell.type = tmp_int;
-      [aDecoder decodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      _cell.image_position = tmp_int;
-      [aDecoder decodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      _cell.entry_type = tmp_int;
-      [aDecoder decodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      _cell.state = tmp_int;
-      [aDecoder decodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-      _cell.mnemonic_location = tmp_int;
-      [aDecoder decodeValueOfObjCType: @encode(NSUInteger) 
-                                   at: &_mouse_down_flags];
-      [aDecoder decodeValueOfObjCType: @encode(NSUInteger) at: &_action_mask];
+      decode_NSUInteger(aDecoder, &tmp_uint);
+      _cell.text_align = tmp_uint;
+      decode_NSUInteger(aDecoder, &tmp_uint);
+      _cell.type = tmp_uint;
+      decode_NSUInteger(aDecoder, &tmp_uint);
+      _cell.image_position = tmp_uint;
+      decode_NSUInteger(aDecoder, &tmp_uint);
+      _cell.entry_type = tmp_uint;
+      decode_NSUInteger(aDecoder, &tmp_uint);
+      _cell.state = tmp_uint;
+      decode_NSUInteger(aDecoder, &tmp_uint);
+      _cell.mnemonic_location = tmp_uint;
+      decode_NSUInteger(aDecoder, &_mouse_down_flags);
+      decode_NSUInteger(aDecoder, &_action_mask);
       if (version < 3)
         {
           unsigned int mask = 0;
@@ -2804,7 +2850,7 @@ static NSColor *dtxtCol;
             }
           _action_mask = mask;
         }
-      _action_mask |= NSLeftMouseUpMask;   
+      _action_mask |= NSLeftMouseUpMask;
       [aDecoder decodeValueOfObjCType: @encode(id) at: &formatter];
       [self setFormatter: formatter];
       [aDecoder decodeValueOfObjCType: @encode(id) at: &menu];
@@ -2826,18 +2872,18 @@ static NSColor *dtxtCol;
 
       if (version >= 2)
         {
-          [aDecoder decodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-          _cell.allows_undo = tmp_int;
-          [aDecoder decodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-          _cell.line_break_mode = tmp_int;
-          [aDecoder decodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-          _cell.control_tint = tmp_int;
-          [aDecoder decodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-          _cell.control_size = tmp_int;
-          [aDecoder decodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-          _cell.focus_ring_type = tmp_int;
-          [aDecoder decodeValueOfObjCType: @encode(unsigned int) at: &tmp_int];
-          _cell.base_writing_direction = tmp_int;
+          decode_NSUInteger(aDecoder, &tmp_uint);
+          _cell.allows_undo = tmp_uint;
+          decode_NSUInteger(aDecoder, &tmp_uint);
+          _cell.line_break_mode = tmp_uint;
+          decode_NSUInteger(aDecoder, &tmp_uint);
+          _cell.control_tint = tmp_uint;
+          decode_NSUInteger(aDecoder, &tmp_uint);
+          _cell.control_size = tmp_uint;
+          decode_NSUInteger(aDecoder, &tmp_uint);
+          _cell.focus_ring_type = tmp_uint;
+          decode_NSUInteger(aDecoder, &tmp_uint);
+          _cell.base_writing_direction = tmp_uint;
         }
       else
 	{
@@ -2845,9 +2891,39 @@ static NSColor *dtxtCol;
 	     wraps attribute. */
 	  [self setWraps: wraps];
 	}
+
+      if (version >= 4)
+	{
+          decode_NSUInteger(aDecoder, &tmp_uint);
+	  _cell.uses_single_line_mode = tmp_uint;
+	}
+
     }
   return self;
 }
+
+- (NSUserInterfaceLayoutDirection) userInterfaceLayoutDirection
+{
+  // FIXME
+  return NSUserInterfaceLayoutDirectionLeftToRight;
+}
+
+- (void) setUserInterfaceLayoutDirection: (NSUserInterfaceLayoutDirection)dir
+{
+  // FIXME: implement this
+  return;
+}
+
+- (void) setUsesSingleLineMode: (BOOL)flag
+{
+  _cell.uses_single_line_mode = flag;
+}
+
+- (BOOL) usesSingleLineMode
+{
+  return _cell.uses_single_line_mode;
+}
+
 @end
 
 @implementation NSCell (PrivateMethods)
@@ -2857,13 +2933,13 @@ static NSColor *dtxtCol;
   if (_cell.is_disabled)
     return dtxtCol;
   else
-    return txtCol;    
+    return txtCol;
 }
 
 /* This method is an exception and returns a non-autoreleased
    dictionary, so that calling methods can deallocate it immediately
    using release.  Otherwise if many cells are drawn/their size
-   computed, we pile up hundreds or thousands of these objects before they 
+   computed, we pile up hundreds or thousands of these objects before they
    are deallocated at the end of the run loop. */
 - (NSDictionary*) _nonAutoreleasedTypingAttributes
 {
@@ -2872,14 +2948,14 @@ static NSColor *dtxtCol;
   NSMutableParagraphStyle *paragraphStyle;
 
   color = [self textColor];
-  /* Note: There are only a few possible paragraph styles for cells.  
+  /* Note: There are only a few possible paragraph styles for cells.
      TODO: Cache them and reuse them for the whole app lifetime. */
   paragraphStyle = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
   [paragraphStyle setLineBreakMode: [self lineBreakMode]];
   [paragraphStyle setBaseWritingDirection: [self baseWritingDirection]];
   [paragraphStyle setAlignment: [self alignment]];
 
-  attr = [[NSDictionary alloc] initWithObjectsAndKeys: 
+  attr = [[NSDictionary alloc] initWithObjectsAndKeys:
                                _font, NSFontAttributeName,
                                color, NSForegroundColorAttributeName,
                                paragraphStyle, NSParagraphStyleAttributeName,
@@ -2910,7 +2986,7 @@ static NSColor *dtxtCol;
 - (NSAttributedString*) _drawAttributedString
 {
   if (!_cell.is_disabled)
-    {  
+    {
       return [self attributedStringValue];
     }
   else
@@ -2918,23 +2994,62 @@ static NSColor *dtxtCol;
       NSAttributedString *attrStr = [self attributedStringValue];
       NSDictionary *attribs;
       NSMutableDictionary *newAttribs;
-              
-      attribs = [attrStr attributesAtIndex: 0 
+
+      attribs = [attrStr attributesAtIndex: 0
                          effectiveRange: NULL];
       newAttribs = [NSMutableDictionary dictionaryWithDictionary: attribs];
       [newAttribs setObject: [NSColor disabledControlTextColor]
                   forKey: NSForegroundColorAttributeName];
-      
+
       return AUTORELEASE([[NSAttributedString alloc]
                              initWithString: [attrStr string]
                              attributes: newAttribs]);
     }
 }
 
+
+- (BOOL) _shouldShortenStringForRect: (NSRect)titleRect size: (NSSize)titleSize length: (NSUInteger)length
+{
+  NSLineBreakMode mode = [self lineBreakMode];
+
+  return ((titleSize.width > titleRect.size.width) && (length > 4) &&
+          (mode == NSLineBreakByTruncatingHead ||
+           mode == NSLineBreakByTruncatingTail ||
+           mode == NSLineBreakByTruncatingMiddle));
+}
+
+- (NSAttributedString*) _resizeAttributedString: (NSAttributedString*)attrstring forRect: (NSRect)titleRect
+{
+  // Redo string based on selected truncation mask...
+  NSMutableAttributedString *mutableString = AUTORELEASE([attrstring mutableCopy]);
+  NSString *ellipsis = @"...";
+  NSLineBreakMode mode = [self lineBreakMode];
+  // This code shortens the string one character at a time.
+  // To speed it up we start off proportional:
+  CGFloat width = [mutableString size].width;
+  int cut = MAX(floor([mutableString length] * (width - titleRect.size.width) / width), 4);
+
+  do
+    {
+      NSRange replaceRange;
+      if (mode == NSLineBreakByTruncatingHead)
+        replaceRange = NSMakeRange(0, cut);
+      else if (mode == NSLineBreakByTruncatingTail)
+        replaceRange = NSMakeRange([mutableString length] - cut, cut);
+      else
+        replaceRange = NSMakeRange(([mutableString length] / 2) - (cut / 2), cut);
+      [mutableString replaceCharactersInRange: replaceRange withString: ellipsis];
+      cut = 4;
+    } while ([mutableString length] > 4 && [mutableString size].width > titleRect.size.width);
+
+  // Return the modified attributed string...
+  return mutableString;
+}
+
 /**
  * Private internal method to display an attributed string.
  */
-- (void) _drawAttributedText: (NSAttributedString*)aString 
+- (void) _drawAttributedText: (NSAttributedString*)aString
                      inFrame: (NSRect)aRect
 {
   NSSize titleSize;
@@ -2943,13 +3058,18 @@ static NSColor *dtxtCol;
     return;
 
   titleSize = [aString size];
+  if ([self _shouldShortenStringForRect: aRect size: titleSize length: [aString length]])
+    {
+      aString = [self _resizeAttributedString: aString forRect: aRect];
+      titleSize = [aString size];
+    }
 
   /** Important: text should always be vertically centered without
    * considering descender [as if descender did not exist].
    * This is particularly important for single line texts.
    * Please make sure the output remains always correct.
    */
-  aRect.origin.y = NSMidY (aRect) - titleSize.height/2; 
+  aRect.origin.y = NSMidY (aRect) - titleSize.height/2;
   aRect.size.height = titleSize.height;
 
   [aString drawInRect: aRect];
@@ -2965,13 +3085,19 @@ static NSColor *dtxtCol;
 
   attributes = [self _nonAutoreleasedTypingAttributes];
   titleSize = [aString sizeWithAttributes: attributes];
+  if ([self _shouldShortenStringForRect: cellFrame size: titleSize length: [aString length]])
+    {
+      NSAttributedString *attrstring = AUTORELEASE([[NSAttributedString alloc] initWithString: aString
+                                                                                   attributes: attributes]);
+      return [self _drawAttributedText: attrstring inFrame: cellFrame];
+    }
 
   /** Important: text should always be vertically centered without
    * considering descender [as if descender did not exist].
    * This is particularly important for single line texts.
    * Please make sure the output remains always correct.
    */
-  cellFrame.origin.y = NSMidY (cellFrame) - titleSize.height/2; 
+  cellFrame.origin.y = NSMidY (cellFrame) - titleSize.height/2;
   cellFrame.size.height = titleSize.height;
 
   [aString drawInRect: cellFrame  withAttributes: attributes];
@@ -2979,7 +3105,7 @@ static NSColor *dtxtCol;
 }
 
 // Private helper method overridden in subclasses
-- (void) _drawBorderAndBackgroundWithFrame: (NSRect)cellFrame 
+- (void) _drawBorderAndBackgroundWithFrame: (NSRect)cellFrame
                                     inView: (NSView*)controlView
 {
   NSBorderType aType;
@@ -3015,7 +3141,7 @@ static NSColor *dtxtCol;
           case NSFocusRingTypeNone:
           default:
             break;
-        } 
+        }
     }
 }
 
@@ -3061,7 +3187,7 @@ static NSColor *dtxtCol;
 {
   if (_formatter != nil)
     {
-      NSString *contents; 
+      NSString *contents;
 
       contents = [_formatter editingStringForObjectValue: _object_value];
       if (contents == nil)
@@ -3089,7 +3215,7 @@ static NSColor *dtxtCol;
     }
   else
     {
-      NSString *contents; 
+      NSString *contents;
 
       if (nil == _contents)
         {
@@ -3142,7 +3268,7 @@ scaleProportionally(NSSize imageSize, NSSize canvasSize, BOOL scaleUpOrDown)
   /* Get the smaller ratio and scale the image size by it.  */
   ratio = MIN(canvasSize.width / imageSize.width,
 	      canvasSize.height / imageSize.height);
-  
+
   /* Only scale down, unless scaleUpOrDown is YES */
   if (ratio < 1.0 || scaleUpOrDown)
     {

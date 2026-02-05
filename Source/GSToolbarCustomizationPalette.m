@@ -11,16 +11,16 @@
    This file is part of the GNUstep GUI Library.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
    
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
+   Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Library General Public
+   You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
    If not, write to the Free Software Foundation,
    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -100,7 +100,6 @@
   float vAccumulator = 0.0;
   NSEnumerator *e = [[self subviews] objectEnumerator];
   NSView *layoutedView = nil;
-  int index = 0;
 
   // Loop over all subviews
   while ((layoutedView = [e nextObject]) != nil)
@@ -137,7 +136,6 @@
                                                 maxHeight - vAccumulator)];
       [layoutedView setAutoresizingMask:NSViewMinYMargin];
       hAccumulator += width;
-      index++;
     }
   maxHeight -= vAccumulator; // adjust for final row
   if (maxHeight != 0) // need to grow (or shrink) the window to accommodate more (or fewer) items

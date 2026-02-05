@@ -108,7 +108,7 @@
 	  to be used to view application help.<br />  If this is not specified
 	  (or is an empty string) the 'best' available viewer is used (an
 	  application whose Info.plist says that it can view files of the
-	  appropriate type ... usually rtp or rtfd files).<br />
+	  appropriate type ... usually rtf or rtfd files).<br />
 	  If this is set to <code>NSHelpPanel</code> or if no application can
 	  be used to view the help file, the help is displayed by the
 	  shared help panel object built in to the application.
@@ -176,6 +176,15 @@
           (progressively adding dots) in the window titlebar while
           reading very big directories (more than 100 entries).  This
           is meant to make things friendlier for slow computers.
+          </p>
+	  </desc>
+	  <term>GSScaleFactor</term>
+	  <desc>
+          <p>
+          A floating point number, <code>1.0</code> by default. Scales
+          GUI elements by the given factor for high-DPI monitors. DPI
+          auto-detection on some platforms (only Windows, for now) will
+          cause the default to appear to change.
           </p>
 	  </desc>
 	  <term>GSUnknownFileTool</term>
@@ -277,6 +286,13 @@
           be pressed together with the key equivalent of the menu item. 
           Default "#".
 	  </p>
+	  </desc>
+	  <term>GSDisableSpellCheckerServer</term>
+	  <desc>
+          <p>
+          A boolean that, if set to YES, disables the start of the Spell Checker.
+          Defaults to NO.
+          </p>
 	  </desc>
 	  <term>NSInterfaceStyleDefault</term>
 	  <desc>
@@ -391,5 +407,3 @@
     </chapter>
   </body>
 </gsdoc>
-
-

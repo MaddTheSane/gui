@@ -40,11 +40,12 @@
 {
   ASSIGN(_markerFormat, format); 
   _listOptions = mask;
+  _startingItemNumber = 1;
 
   return self;
 }
 
-- (void) dealloc;
+- (void) dealloc
 {
   RELEASE(_markerFormat);
   [super dealloc];
@@ -87,6 +88,7 @@
   unichar square = 0x25A0;
 
   // FIXME: Needs optimisation and roman numbers
+  // FIXME: Take _startingItemNumber into account.
   [s replaceOccurrencesOfString: @"{box}" 
      withString: [NSString stringWithCharacters: &box length: 1] 
      options: 0 
@@ -167,6 +169,7 @@
                     forKey: @"NSMarkerFormat"];
       [aCoder encodeInt: _listOptions
                  forKey: @"NSOptions"];
+      // FIXME: encode _startingItemNumber correctly.
     }
   else
     {
@@ -179,11 +182,22 @@
     {
       ASSIGN(_markerFormat, [aDecoder decodeObjectForKey: @"NSMarkerFormat"]);
       _listOptions = [aDecoder decodeIntForKey: @"NSOptions"];
+     // FIXME: decode _startingItemNumber correctly.
     }
   else
     {
     }
   return self;
+}
+
+- (NSInteger) startingItemNumber
+{
+  return _startingItemNumber;
+}
+
+- (void) setStartingItemNumber: (NSInteger)start
+{
+  _startingItemNumber = start;
 }
 
 @end

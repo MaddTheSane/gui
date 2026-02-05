@@ -27,7 +27,7 @@
 
 #ifndef _GNUstep_H_NSTextList
 #define _GNUstep_H_NSTextList
-#import <GNUstepBase/GSVersionMacros.h>
+#import <AppKit/AppKitDefines.h>
 
 #if OS_API_VERSION(MAC_OS_X_VERSION_10_4, GS_API_LATEST)
 #import <Foundation/NSObject.h>
@@ -38,10 +38,12 @@ enum {
 	NSTextListPrependEnclosingMarker = 1
 };
 
+APPKIT_EXPORT_CLASS
 @interface NSTextList : NSObject <NSCopying, NSCoding>
 {
 	NSString *_markerFormat;
 	unsigned int _listOptions;
+	NSInteger _startingItemNumber;
 }
 
 - (id) initWithMarkerFormat: (NSString *)format 
@@ -49,6 +51,15 @@ enum {
 - (unsigned int) listOptions;
 - (NSString *) markerForItemNumber: (int)item;
 - (NSString *) markerFormat;
+
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_6, GS_API_LATEST)
+#if GS_HAS_DECLARED_PROPERTIES
+@property NSInteger startingItemNumber;
+#else
+- (NSInteger) startingItemNumber;
+- (void) setStartingItemNumber: (NSInteger)start;
+#endif
+#endif
 
 @end
 

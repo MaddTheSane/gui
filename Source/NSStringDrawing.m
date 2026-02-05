@@ -126,7 +126,8 @@ static void init_string_drawing(void)
       [textContainer setLineFragmentPadding: 0];
       [layoutManager addTextContainer: textContainer];
       [textContainer release];
-      
+
+      cache[i].used = 0;
       cache[i].textStorage = textStorage;
       cache[i].layoutManager = layoutManager;
       cache[i].textContainer = textContainer;
@@ -510,7 +511,7 @@ static void draw_in_rect(cache_t *c, NSRect rect)
   NS_DURING
     {    
       prepare_attributed_string(self);
-      c = cache_lookup(hasSize, size, NO);
+      c = cache_lookup(hasSize, size, YES);
       result = c->usedRect;
     }
   NS_HANDLER
@@ -603,7 +604,7 @@ static void draw_in_rect(cache_t *c, NSRect rect)
   NS_DURING
     {
       prepare_string(self, attrs);
-      c = cache_lookup(hasSize, size, NO);
+      c = cache_lookup(hasSize, size, YES);
       result = c->usedRect;
     }
   NS_HANDLER

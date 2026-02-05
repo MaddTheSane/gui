@@ -5,8 +5,8 @@
 
    Copyright (C) 2002, 2009 Free Software Foundation, Inc.
 
-   Written by:  Enrico Sersale <enrico@imago.ro>,
-                  Stefan Bidigaray <stefanbidi@gmail.com>
+   Written by:  Enrico Sersale
+                Stefan Bidigaray <stefanbidi@gmail.com>
    Date: Jul 2002, Jun 2009
    
    This file is part of the GNUstep GUI Library.
@@ -30,6 +30,7 @@
 
 #ifndef _GNUstep_H_NSSound
 #define _GNUstep_H_NSSound
+#import <AppKit/AppKitDefines.h>
 
 #import <Foundation/NSObject.h>
 #import <Foundation/NSBundle.h>
@@ -54,6 +55,7 @@
  */
 NSArray *PlaybackDeviceIdentifiers (void);
 
+APPKIT_EXPORT_CLASS
 @interface NSSound : NSObject <NSCoding, NSCopying>
 {		
   NSString *_name;

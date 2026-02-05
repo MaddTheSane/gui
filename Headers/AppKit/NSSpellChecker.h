@@ -44,6 +44,15 @@
 @class NSDictionary;
 @class NSMutableDictionary;
 
+typedef NSInteger NSCorrectionIndicatorType;
+enum
+{
+  NSCorrectionIndicatorTypeDefault = 0,
+  NSCorrectionIndicatorTypeReversion,
+  NSCorrectionIndicatorTypeGuesses
+};
+
+APPKIT_EXPORT_CLASS
 @interface NSSpellChecker : NSObject
 {
 @private
@@ -72,6 +81,10 @@
   id _correctButton;
 }
 
++ (BOOL)isAutomaticTextReplacementEnabled;
++ (BOOL)isAutomaticDashSubstitutionEnabled;
++ (BOOL)isAutomaticQuoteSubstitutionEnabled;
+
 //
 // Making a Checker available 
 //
@@ -98,6 +111,14 @@
 			    wrap:(BOOL)wrapFlag
 	  inSpellDocumentWithTag:(int)tag
 		       wordCount:(int *)wordCount;
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_5, GS_API_LATEST)
+- (NSRange)checkGrammarOfString:(NSString *)stringToCheck
+		     startingAt:(NSInteger)startingOffset
+		       language:(NSString *)language
+		           wrap:(BOOL)wrapFlag
+	 inSpellDocumentWithTag:(NSInteger)tag
+			details:(NSArray **)details;
+#endif
 - (NSArray *)guessesForWord:(NSString *)word;
 
 //
@@ -120,5 +141,26 @@
 - (void)updateSpellingPanelWithMisspelledWord:(NSString *)word;
 
 @end
+
+typedef NSInteger NSCorrectionResponse;
+enum
+{
+  NSCorrectionResponseNone,
+  NSCorrectionResponseAccepted,
+  NSCorrectionResponseRejected,
+  NSCorrectionResponseIgnored,
+  NSCorrectionResponseEdited,
+  NSCorrectionResponseReverted
+};
+
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_7, GS_API_LATEST)
+APPKIT_EXTERN NSString *NSSpellCheckerDidChangeAutomaticSpellingCorrectionNotification;
+APPKIT_EXTERN NSString *NSSpellCheckerDidChangeAutomaticTextReplacementNotification;
+#endif
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_9, GS_API_LATEST)
+APPKIT_EXTERN NSString *NSSpellCheckerDidChangeAutomaticQuoteSubstitutionNotification;
+APPKIT_EXTERN NSString *NSSpellCheckerDidChangeAutomaticDashSubstitutionNotification;
+#endif
+
 #endif // _GNUstep_H_NSSpellChecker
 

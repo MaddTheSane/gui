@@ -33,10 +33,9 @@
 
 #ifndef _GNUstep_H_NSToolbar
 #define _GNUstep_H_NSToolbar
-#import <GNUstepBase/GSVersionMacros.h>
+#import <AppKit/AppKitDefines.h>
 
 #import <Foundation/NSObject.h>
-#import <AppKit/AppKitDefines.h>
 
 @class NSArray;
 @class NSString;
@@ -72,6 +71,9 @@ typedef enum
 APPKIT_EXPORT NSString *NSToolbarDidRemoveItemNotification;
 APPKIT_EXPORT NSString *NSToolbarWillAddItemNotification;
 
+typedef NSString* NSToolbarItemIdentifier;
+
+APPKIT_EXPORT_CLASS
 @interface NSToolbar : NSObject
 {
   NSDictionary *_configurationDictionary;
@@ -142,11 +144,26 @@ APPKIT_EXPORT NSString *NSToolbarWillAddItemNotification;
 /*
  * Methods Implemented by the Delegate
  */
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_6, GS_API_LATEST)
+/** <ignore> */
+@protocol NSToolbarDelegate <NSObject>
+#if GS_PROTOCOLS_HAVE_OPTIONAL
+@optional
+#endif
+/** </ignore> */
+#else
 @interface NSObject (NSToolbarDelegate)
+#endif
 // notification methods
 - (void) toolbarDidRemoveItem: (NSNotification*)aNotification;
 - (void) toolbarWillAddItem: (NSNotification*)aNotification;
 
+// optional method
+- (NSArray *) toolbarSelectableItemIdentifiers: (NSToolbar *)toolbar;
+
+#if GS_PROTOCOLS_HAVE_OPTIONAL
+@required
+#endif
 // delegate methods
 // required method
 - (NSToolbarItem*)toolbar: (NSToolbar*)toolbar
@@ -156,8 +173,6 @@ willBeInsertedIntoToolbar: (BOOL)flag;
 - (NSArray*) toolbarAllowedItemIdentifiers: (NSToolbar*)toolbar;
 // required method
 - (NSArray*) toolbarDefaultItemIdentifiers: (NSToolbar*)toolbar;
-// optional method
-- (NSArray *) toolbarSelectableItemIdentifiers: (NSToolbar *)toolbar;
 @end
 
 #endif /* _GNUstep_H_NSToolbar */

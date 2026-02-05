@@ -37,16 +37,18 @@
 
 #ifndef _GNUstep_H_NSApplication
 #define _GNUstep_H_NSApplication
-#import <GNUstepBase/GSVersionMacros.h>
+#import <AppKit/AppKitDefines.h>
 
 #import <AppKit/NSResponder.h>
 #import <AppKit/NSUserInterfaceValidation.h>
+#import <AppKit/NSWindow.h>
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
 @class NSArray;
+@class NSAppearance;
 @class NSDate;
 @class NSError;
 @class NSException;
@@ -62,6 +64,7 @@ extern "C" {
 @class NSMenuItem;
 @class NSPasteboard;
 @class NSWindow;
+@class NSDockTile;
 
 @class GSInfoPanel;
 
@@ -105,27 +108,54 @@ enum {
 };
 typedef NSUInteger NSRequestUserAttentionType;
 
-#define NSAppKitVersionNumber10_0   577
-#define NSAppKitVersionNumber10_1   620
-#define NSAppKitVersionNumber10_2   663
-#define NSAppKitVersionNumber10_2_3 663.6
-#define NSAppKitVersionNumber10_3   743
-#define NSAppKitVersionNumber10_3_2 743.14
-#define NSAppKitVersionNumber10_3_3 743.2
-#define NSAppKitVersionNumber10_3_5 743.24
-#define NSAppKitVersionNumber10_3_7 743.33
-#define NSAppKitVersionNumber10_3_9 743.36
-#define NSAppKitVersionNumber10_4   824
-#define NSAppKitVersionNumber10_4_1 824.1
-#define NSAppKitVersionNumber10_4_3 824.23
-#define NSAppKitVersionNumber10_4_4 824.33
-#define NSAppKitVersionNumber10_4_7 824.41
-#define NSAppKitVersionNumber10_5   949
-#define NSAppKitVersionNumber10_5_2 949.27
-#define NSAppKitVersionNumber10_5_3 949.33
-#define NSAppKitVersionNumber10_6   1038
-#define NSAppKitVersionNumber10_7   1138
-#define NSAppKitVersionNumber10_7_2 1138.23
+#define NSAppKitVersionNumber10_0      577
+#define NSAppKitVersionNumber10_1      620
+#define NSAppKitVersionNumber10_2      663
+#define NSAppKitVersionNumber10_2_3    663.6
+#define NSAppKitVersionNumber10_3      743
+#define NSAppKitVersionNumber10_3_2    743.14
+#define NSAppKitVersionNumber10_3_3    743.2
+#define NSAppKitVersionNumber10_3_5    743.24
+#define NSAppKitVersionNumber10_3_7    743.33
+#define NSAppKitVersionNumber10_3_9    743.36
+#define NSAppKitVersionNumber10_4      824
+#define NSAppKitVersionNumber10_4_1    824.1
+#define NSAppKitVersionNumber10_4_3    824.23
+#define NSAppKitVersionNumber10_4_4    824.33
+#define NSAppKitVersionNumber10_4_7    824.41
+#define NSAppKitVersionNumber10_5      949
+#define NSAppKitVersionNumber10_5_2    949.27
+#define NSAppKitVersionNumber10_5_3    949.33
+#define NSAppKitVersionNumber10_6      1038
+#define NSAppKitVersionNumber10_7      1138
+#define NSAppKitVersionNumber10_7_2    1138.23
+#define NSAppKitVersionNumber10_7_3    1138.32
+#define NSAppKitVersionNumber10_7_4    1138.47
+#define NSAppKitVersionNumber10_8      1187
+#define NSAppKitVersionNumber10_9      1265
+#define NSAppKitVersionNumber10_10     1343
+#define NSAppKitVersionNumber10_10_2   1344
+#define NSAppKitVersionNumber10_10_3   1347
+#define NSAppKitVersionNumber10_10_4   1348
+#define NSAppKitVersionNumber10_10_5   1348
+#define NSAppKitVersionNumber10_10_Max 1349
+#define NSAppKitVersionNumber10_11     1404
+#define NSAppKitVersionNumber10_11_1   1404.13
+#define NSAppKitVersionNumber10_11_2   1404.34
+#define NSAppKitVersionNumber10_11_3   1404.34
+#define NSAppKitVersionNumber10_12     1504
+#define NSAppKitVersionNumber10_12_1   1504.60
+#define NSAppKitVersionNumber10_12_2   1504.76
+#define NSAppKitVersionNumber10_13     1561
+#define NSAppKitVersionNumber10_13_1   1561.1
+#define NSAppKitVersionNumber10_13_2   1561.2
+#define NSAppKitVersionNumber10_13_4   1561.4
+#define NSAppKitVersionNumber10_14     1671
+#define NSAppKitVersionNumber10_14_1   1671.1
+#define NSAppKitVersionNumber10_14_2   1671.2
+#define NSAppKitVersionNumber10_14_3   1671.3
+#define NSAppKitVersionNumber10_14_4   1671.4
+#define NSAppKitVersionNumber10_14_5   1671.5
 
 APPKIT_EXPORT const double NSAppKitVersionNumber;
 #endif
@@ -173,6 +203,7 @@ typedef enum _NSApplicationPresentationOptions
 APPKIT_EXPORT NSString	*NSModalPanelRunLoopMode;
 APPKIT_EXPORT NSString	*NSEventTrackingRunLoopMode;
 
+APPKIT_EXPORT_CLASS
 @interface NSApplication : NSResponder <NSCoding,NSUserInterfaceValidations>
 {
   NSGraphicsContext	*_default_context;
@@ -193,11 +224,13 @@ APPKIT_EXPORT NSString	*NSEventTrackingRunLoopMode;
   BOOL			_windows_need_update;
   NSImage		*_app_icon;
   NSWindow		*_app_icon_window;
+  NSDockTile            *_dock_tile;
   NSMutableArray	*_hidden;
   NSMutableArray	*_inactive;
   NSWindow		*_hidden_key;
   NSWindow              *_hidden_main;
   GSInfoPanel           *_infoPanel;
+  NSAppearance          *_appearance;
   NSApplicationPresentationOptions _presentationOptions;
 
   /* This autorelease pool should only be created and used by -run, with

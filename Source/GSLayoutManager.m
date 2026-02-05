@@ -34,6 +34,7 @@
 #import "AppKit/NSAttributedString.h"
 #import "AppKit/NSTextStorage.h"
 #import "AppKit/NSTextContainer.h"
+#import "AppKit/NSTextView.h"
 
 /* just for NSAttachmentCharacter */
 #import "AppKit/NSTextAttachment.h"
@@ -1127,37 +1128,22 @@ Fills in all glyph holes up to last. only looking at levels below level
   unsigned int cpos, pos;
   unsigned int i, target;
 
-  /* TODO: should this really be valid?
-
-  This is causing all kinds of problems when border glyph ranges are passed
-  to other functions. Better to keep the layout manager clean of all this and
-  let NSTextView deal with it.
-  */
-#if 1
-  if (charRange.length == 0 && charRange.location == [[_textStorage string] length])
-    {
-      if (actualCharRange)
-        *actualCharRange = NSMakeRange([[_textStorage string] length], 0);
-      return NSMakeRange([self numberOfGlyphs], 0);
-    }
-#endif
-
   if (charRange.length == 0 && charRange.location == 0)
     {
       if (actualCharRange)
         *actualCharRange = charRange;
       return NSMakeRange(0, 0);
     }
+  target = charRange.location;
   pos = NSMaxRange(charRange) - 1;
   [self _generateGlyphsUpToCharacter: pos];
-  if (glyphs->char_length <= pos)
+  if (glyphs->char_length <= pos || glyphs->char_length <= target)
     {
-      [NSException raise: NSRangeException
-                   format: @"%s character range out of range", __PRETTY_FUNCTION__];
-      return NSMakeRange(0, 0);
+      if (actualCharRange)
+        *actualCharRange = NSMakeRange([[_textStorage string] length], 0);
+      return NSMakeRange([self numberOfGlyphs], 0);
     }
 
-  target = charRange.location;
   r = [self _glyphForCharacter: target
             index: &i
             positions: &pos : &cpos];
@@ -3103,6 +3089,16 @@ See [NSTextView -setTextContainer:] for more information about these calls.
   return showsControlCharacters;
 }
 
+- (CGFloat) defaultLineHeightForFont: (NSFont*)theFont
+{
+  return [theFont defaultLineHeightForFont];
+}
+
+- (CGFloat) defaultBaselineOffsetForFont: (NSFont*)theFont
+{
+  return 0.0;
+}
+
 /*
 Note that NSLayoutManager completely overrides this (to perform more
 intelligent invalidation of layout using the constraints on layout it
@@ -3295,7 +3291,13 @@ forStartingGlyphAtIndex: (NSUInteger)glyph
       else if (attributeTag == NSGlyphAttributeBidiLevel)
         g->bidilevel = anInt;
     }
- }
+}
+
+- (NSDictionary *) typingAttributes
+{
+  return [NSTextView defaultTypingAttributes];
+}
+
 
 /*
  * NSCoding protocol

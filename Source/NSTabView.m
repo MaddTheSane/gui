@@ -111,10 +111,15 @@
 {
   if (tabViewItem == nil)
     return;
+
+  if (_items == nil)
+    {
+      ASSIGN(_items, [NSMutableArray array]);
+    }
   
   [tabViewItem _setTabView: self];
   [_items insertObject: tabViewItem atIndex: index];
-  
+
   // If this is the first inserted then select it...
   if ([_items count] == 1)
     [self selectTabViewItem: tabViewItem];
@@ -160,6 +165,9 @@
     {
       [_delegate tabViewDidChangeNumberOfTabViewItems: self];
     }
+
+  /* TODO (Optimize) - just mark the tabs rect as needing redisplay */
+  [self setNeedsDisplay: YES];
 }
 
 - (NSInteger) indexOfTabViewItem: (NSTabViewItem*)tabViewItem
@@ -560,6 +568,11 @@
       if ([aDecoder containsValueForKey: @"NSTabViewItems"])
         {
           ASSIGN(_items, [aDecoder decodeObjectForKey: @"NSTabViewItems"]);
+          [_items makeObjectsPerformSelector: @selector(_setTabView:) withObject: self];
+        }
+      else
+        {
+          ASSIGN(_items, [NSMutableArray array]);
         }
       if ([aDecoder containsValueForKey: @"NSSelectedTabViewItem"])
         {
@@ -567,7 +580,7 @@
 	  // and sets it to [self contentRect]. 
 	  //
 	  // This is desirable because the subview frame will be different
-	  // depending on whether the arcive is from Cocoa or GNUstep,
+	  // depending on whether the archive is from Cocoa or GNUstep,
 	  // and which GNUstep theme was active at save time.
 	  //
 	  // However, it does mean that the tab view contents should be 

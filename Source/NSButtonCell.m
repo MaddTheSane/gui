@@ -56,55 +56,9 @@
 #import "GNUstepGUI/GSTheme.h"
 #import "GNUstepGUI/GSNibLoading.h"
 #import "GSGuiPrivate.h"
+#import "GSCodingFlags.h"
 
 #include <math.h>
-
-typedef struct _GSButtonCellFlags 
-{
-#if GS_WORDS_BIGENDIAN == 1
-  unsigned int isPushin:1;
-  unsigned int changeContents:1;
-  unsigned int changeBackground:1;
-  unsigned int changeGray:1;
-  unsigned int highlightByContents:1;
-  unsigned int highlightByBackground:1;
-  unsigned int highlightByGray:1;
-  unsigned int drawing:1;
-  unsigned int isBordered:1;
-  unsigned int imageDoesOverlap:1;
-  unsigned int isHorizontal:1;
-  unsigned int isBottomOrLeft:1;
-  unsigned int isImageAndText:1;
-  unsigned int isImageSizeDiff:1;
-  unsigned int hasKeyEquiv:1;
-  unsigned int lastState:1;
-  unsigned int isTransparent:1;
-  unsigned int unused1:6; // inset:2 doesn't dim:1 gradient:3
-  unsigned int useButtonImageSource:1;
-  unsigned int unused2:8; // alt mnemonic loc.
-#else
-  unsigned int unused2:8; // alt mnemonic loc.
-  unsigned int useButtonImageSource:1;
-  unsigned int unused1:6; // inset:2 doesn't dim:1 gradient:3
-  unsigned int isTransparent:1;
-  unsigned int lastState:1;
-  unsigned int hasKeyEquiv:1;
-  unsigned int isImageSizeDiff:1;
-  unsigned int isImageAndText:1;
-  unsigned int isBottomOrLeft:1;
-  unsigned int isHorizontal:1;
-  unsigned int imageDoesOverlap:1;
-  unsigned int isBordered:1;
-  unsigned int drawing:1;
-  unsigned int highlightByGray:1;
-  unsigned int highlightByBackground:1;
-  unsigned int highlightByContents:1;
-  unsigned int changeGray:1;
-  unsigned int changeBackground:1;
-  unsigned int changeContents:1;
-  unsigned int isPushin:1;
-#endif
-} GSButtonCellFlags;
 
 @interface NSCell (Private)
 - (NSSize) _scaleImageWithSize: (NSSize)imageSize
@@ -818,6 +772,9 @@ typedef struct _GSButtonCellFlags
         [self setBordered: NO];
         [self setBezeled: NO];
         [self setImageDimsWhenDisabled: NO];
+        break;
+      default:
+        NSLog(@"Using unsupported button type %d", buttonType);
         break;
     }
 }
@@ -1622,9 +1579,8 @@ typedef struct _GSButtonCellFlags
  */
 - (void) encodeWithCoder: (NSCoder*)aCoder
 {
-  BOOL tmp;
-
   [super encodeWithCoder: aCoder];
+
   if ([aCoder allowsKeyedCoding])
     {
       GSButtonCellFlags buttonCellFlags;
@@ -1671,8 +1627,10 @@ typedef struct _GSButtonCellFlags
       buttonCellFlags.changeGray = [self cellAttribute: NSChangeGrayCell];
 
       // set these to zero...
-      buttonCellFlags.unused1 = 0; // 32;
-      buttonCellFlags.unused2 = 0; // 255;
+      buttonCellFlags.inset = 0;
+      buttonCellFlags.doesNotDimImage = 0;
+      buttonCellFlags.gradient = 0;
+      buttonCellFlags.unused2 = 0;
       buttonCellFlags.lastState = 0;
       buttonCellFlags.isImageSizeDiff = 0;
       buttonCellFlags.drawing = 0;
@@ -1736,6 +1694,9 @@ typedef struct _GSButtonCellFlags
     }
   else
     {
+      BOOL tmp;
+      NSUInteger tmp2;
+
       [aCoder encodeObject: _keyEquivalent];
       [aCoder encodeObject: _keyEquivalentFont];
       [aCoder encodeObject: _altContents];
@@ -1744,42 +1705,28 @@ typedef struct _GSButtonCellFlags
       [aCoder encodeValueOfObjCType: @encode(BOOL)
               at: &tmp];
 
-      if([NSButtonCell version] <= 2)
-	{
-	  unsigned int ke = _keyEquivalentModifierMask << 16;
-	  [aCoder encodeValueOfObjCType: @encode(unsigned int)
-		  at: &ke];
-	}
-      else
-	{
-	  [aCoder encodeValueOfObjCType: @encode(unsigned int)
-		  at: &_keyEquivalentModifierMask];
-	}
+      encode_NSUInteger(aCoder, &_keyEquivalentModifierMask);
+      tmp2 = _highlightsByMask;
+      encode_NSUInteger(aCoder, &tmp2);
+      tmp2 = _showAltStateMask;
+      encode_NSUInteger(aCoder, &tmp2);
 
-      [aCoder encodeValueOfObjCType: @encode(unsigned int)
-              at: &_highlightsByMask];
-      [aCoder encodeValueOfObjCType: @encode(unsigned int)
-              at: &_showAltStateMask];
-
-      if([NSButtonCell version] >= 2)
-	{
-	  [aCoder encodeObject: _sound];
-	  [aCoder encodeObject: _backgroundColor];
-	  [aCoder encodeValueOfObjCType: @encode(float)
-		  at: &_delayInterval];
-	  [aCoder encodeValueOfObjCType: @encode(float)
-		  at: &_repeatInterval];
-	  [aCoder encodeValueOfObjCType: @encode(unsigned int)
-		  at: &_bezel_style];
-	  [aCoder encodeValueOfObjCType: @encode(unsigned int)
-		  at: &_gradient_type];
-	  tmp = _image_dims_when_disabled;
-	  [aCoder encodeValueOfObjCType: @encode(BOOL)
-		  at: &tmp];
-	  tmp = _shows_border_only_while_mouse_inside;
-	  [aCoder encodeValueOfObjCType: @encode(BOOL)
-		  at: &tmp];
-	}
+      [aCoder encodeObject: _sound];
+      [aCoder encodeObject: _backgroundColor];
+      [aCoder encodeValueOfObjCType: @encode(float)
+                                 at: &_delayInterval];
+      [aCoder encodeValueOfObjCType: @encode(float)
+                                 at: &_repeatInterval];
+      tmp2 = _bezel_style;
+      encode_NSUInteger(aCoder, &tmp2);
+      tmp2 = _gradient_type;
+      encode_NSUInteger(aCoder, &tmp2);
+      tmp = _image_dims_when_disabled;
+      [aCoder encodeValueOfObjCType: @encode(BOOL)
+                                 at: &tmp];
+      tmp = _shows_border_only_while_mouse_inside;
+      [aCoder encodeValueOfObjCType: @encode(BOOL)
+                                 at: &tmp];
     }
 }
 
@@ -1805,7 +1752,19 @@ typedef struct _GSButtonCellFlags
         }
       if ([aDecoder containsValueForKey: @"NSAlternateContents"])
         {
-          [self setAlternateTitle: [aDecoder decodeObjectForKey: @"NSAlternateContents"]];
+	  id alternateContents = [aDecoder decodeObjectForKey: @"NSAlternateContents"];
+          if ([alternateContents isKindOfClass:[NSString class]]) 
+	    {
+              [self setAlternateTitle:alternateContents];
+	    }
+          else if ([alternateContents isKindOfClass:[NSImage class]]) 
+	    {
+              [self setAlternateImage:alternateContents];
+	    }
+          else 
+	    {
+	      NSLog(@"Invalid class for NSAlternateContents: %@", [alternateContents class]);
+            }
         }
       if ([aDecoder containsValueForKey: @"NSButtonFlags"])
         {
@@ -1926,27 +1885,32 @@ typedef struct _GSButtonCellFlags
   else
     {
       BOOL tmp;
+      NSUInteger tmp2;
       int version = [aDecoder versionForClassName: @"NSButtonCell"];
       NSString *key = nil;
 
       [aDecoder decodeValueOfObjCType: @encode(id) at: &key];
-      [self setKeyEquivalent: key]; // Set the key equivalent...
+      // Hack to correct a Gorm problem, there "\n" is used instead of "\r".
+      if ([key isEqualToString: @"\n" ])
+        {
+          key = @"\r";
+        }
+      [self setKeyEquivalent: key];
 
       [aDecoder decodeValueOfObjCType: @encode(id) at: &_keyEquivalentFont];
       [aDecoder decodeValueOfObjCType: @encode(id) at: &_altContents];
       [aDecoder decodeValueOfObjCType: @encode(id) at: &_altImage];
       [aDecoder decodeValueOfObjCType: @encode(BOOL) at: &tmp];
       _buttoncell_is_transparent = tmp;
-      [aDecoder decodeValueOfObjCType: @encode(unsigned int)
-                                   at: &_keyEquivalentModifierMask];
+      decode_NSUInteger(aDecoder, &_keyEquivalentModifierMask);
       if (version <= 2)
         {
           _keyEquivalentModifierMask = _keyEquivalentModifierMask << 16;
         }
-      [aDecoder decodeValueOfObjCType: @encode(unsigned int)
-                                   at: &_highlightsByMask];
-      [aDecoder decodeValueOfObjCType: @encode(unsigned int)
-                                   at: &_showAltStateMask];
+      decode_NSUInteger(aDecoder, &tmp2);
+      _highlightsByMask = (NSInteger)tmp2;
+      decode_NSUInteger(aDecoder, &tmp2);
+      _showAltStateMask = (NSInteger)tmp2;
 
       if (version >= 2)
         {
@@ -1954,10 +1918,10 @@ typedef struct _GSButtonCellFlags
           [aDecoder decodeValueOfObjCType: @encode(id) at: &_backgroundColor];
           [aDecoder decodeValueOfObjCType: @encode(float) at: &_delayInterval];
           [aDecoder decodeValueOfObjCType: @encode(float) at: &_repeatInterval];
-          [aDecoder decodeValueOfObjCType: @encode(unsigned int)
-                                       at: &_bezel_style];
-          [aDecoder decodeValueOfObjCType: @encode(unsigned int)
-                                       at: &_gradient_type];
+          decode_NSUInteger(aDecoder, &tmp2);
+          _bezel_style = (NSBezelStyle)tmp2;
+          decode_NSUInteger(aDecoder, &tmp2);
+          _gradient_type = (NSGradientType)tmp2;
           [aDecoder decodeValueOfObjCType: @encode(BOOL) at: &tmp];
           _image_dims_when_disabled = tmp;
           [aDecoder decodeValueOfObjCType: @encode(BOOL) at: &tmp];
@@ -1967,13 +1931,22 @@ typedef struct _GSButtonCellFlags
       _imageScaling = NSImageScaleNone;
     }
 
-  // Hack to correct a Gorm problem, there "\n" is used instead of "\r".
-  if ([_keyEquivalent isEqualToString: @"\n" ])
-    {
-      [self setKeyEquivalent: @"\r"];
-    }
-
   return self;
+}
+
+// Implement 10.7 NSRadio button behavior...
+
+- (BOOL) _isRadio
+{
+  return ([self image] == [NSImage imageNamed: @"NSRadioButton"]);
+}
+
+- (NSInteger) nextState
+{
+  if ([self _isRadio] && [self state] == NSOnState)
+    return [self state];
+
+  return [super nextState];
 }
 
 @end

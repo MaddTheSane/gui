@@ -50,6 +50,7 @@
 #import "AppKit/NSWindow.h"
 #import "GSBindingHelpers.h"
 #import "NSViewPrivate.h"
+#import "GSGuiPrivate.h"
 
 /*
  * Class variables
@@ -121,6 +122,7 @@ static NSNotificationCenter *nc;
 
 - (void) dealloc
 {
+  [GSKeyValueBinding unbindAllForObject: self];
   RELEASE(_cell);
   [super dealloc];
 }
@@ -614,6 +616,7 @@ static NSNotificationCenter *nc;
 - (void) textDidChange: (NSNotification *)aNotification
 {
   NSMutableDictionary *dict;
+  GSKeyValueBinding *theBinding;
 
   dict = [[NSMutableDictionary alloc] initWithDictionary: 
 				     [aNotification userInfo]];
@@ -623,6 +626,19 @@ static NSNotificationCenter *nc;
       object: self
       userInfo: dict];
   RELEASE(dict);
+
+  theBinding = [GSKeyValueBinding getBinding: NSValueBinding
+                                   forObject: self];
+  if (theBinding != nil)
+    {
+      NSDictionary *options = [theBinding->info objectForKey: NSOptionsKey];
+      NSNumber *num = [options objectForKey: NSContinuouslyUpdatesValueBindingOption];
+
+      if ([num boolValue])
+        {
+          [theBinding reverseSetValueFor: @"objectValue"];
+        }
+    }
 }
 
 /**<p>Invokes when the text cell is changed.
@@ -993,7 +1009,7 @@ static NSNotificationCenter *nc;
     }
   else
     {
-      [aCoder encodeValueOfObjCType: @encode(int) at: &_tag];
+      encode_NSInteger(aCoder, &_tag);
       [aCoder encodeObject: _cell];
       [aCoder encodeValueOfObjCType: @encode(BOOL) at: &_ignoresMultiClick];
     }
@@ -1038,7 +1054,7 @@ static NSNotificationCenter *nc;
     }
   else 
     {
-      [aDecoder decodeValueOfObjCType: @encode(int) at: &_tag];
+      decode_NSInteger(aDecoder, &_tag);
       [aDecoder decodeValueOfObjCType: @encode(id) at: &_cell];
       [aDecoder decodeValueOfObjCType: @encode(BOOL) at: &_ignoresMultiClick];
     }
@@ -1120,6 +1136,12 @@ static NSNotificationCenter *nc;
     {
       return [super valueForKey: aKey];
     }
+}
+
+- (NSSize) sizeThatFits: (NSSize)size
+{
+  // FIXME: This is a stub
+  return size;
 }
 
 @end

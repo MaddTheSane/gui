@@ -88,6 +88,17 @@ AC_PROG_CC
 AC_PROG_CPP
 
 #--------------------------------------------------------------------
+# Check for pkg-config
+#--------------------------------------------------------------------
+AC_PATH_PROG(WHOAMI, whoami, echo, $PATH:/usr/ucb)
+PKG_PROG_PKG_CONFIG
+# If the modern mechanism fails we may have an older pkg-config
+# so try looking it up the old fashioned way.
+if test -z "$PKG_CONFIG"; then
+  AC_PATH_PROG(PKG_CONFIG,pkg-config,,)
+fi
+
+#--------------------------------------------------------------------
 # Add target OS directories as necessary
 #--------------------------------------------------------------------
 CONFIG_SYSTEM_INCL="$CPPFLAGS"
@@ -143,7 +154,7 @@ LDFLAGS="$LDFLAGS -L$GNUSTEP_LDIR/$LIBRARY_COMBO -L$GNUSTEP_LDIR"
 
 
 AC_CHECK_LIB(m, main)
-AC_CHECK_FUNCS(rint rintf atan2f)
+AC_CHECK_FUNCS(rint rintf atan2f floorf)
 
 
 #--------------------------------------------------------------------
@@ -151,6 +162,8 @@ AC_CHECK_FUNCS(rint rintf atan2f)
 #--------------------------------------------------------------------
 AC_CHECK_HEADERS(mntent.h)
 AC_CHECK_HEADERS(sys/mntent.h)
+AC_CHECK_MEMBER(struct mntent.mnt_fsname,[AC_DEFINE(MNT_FSNAME,mnt_fsname,mntent structure member name)],,[#include <mntent.h>])
+AC_CHECK_MEMBER(struct mntent.mnt_fsname,[AC_DEFINE(MNT_FSNAME,mnt_fsname,mntent structure member name)],,[#include <sys/mntent.h>])
 AC_CHECK_MEMBER(struct mntent.mnt_dir,[AC_DEFINE(MNT_MEMB,mnt_dir,mntent structure member name)],,[#include <mntent.h>])
 AC_CHECK_MEMBER(struct mntent.mnt_mountp,[AC_DEFINE(MNT_MEMB,mnt_mountp,mntent structure member name)],,[#include <sys/mntent.h>])
 AC_FUNC_GETMNTENT
@@ -271,7 +284,16 @@ if test "$have_tiff" = yes; then
     GRAPHIC_LFLAGS="$with_tiff_library $GRAPHIC_LFLAGS"
     GRAPHIC_CFLAGS="$with_tiff_include $GRAPHIC_CFLAGS"
   else
-    have_tiff=no
+    PKG_CHECK_MODULES(
+      [TIFF],
+      [libtiff-4],
+      [
+        GRAPHIC_LFLAGS="$TIFF_LIBS $GRAPHIC_LFLAGS"
+        GRAPHIC_CFLAGS="$TIFF_CFLAGS $GRAPHIC_CFLAGS"
+      ],
+      [
+        have_tiff=no
+      ])
   fi
 fi
 
@@ -429,6 +451,11 @@ AS_IF([test "x$enable_imagemagick" = "xyes"], [
     ],
     [AC_DEFINE([HAVE_IMAGEMAGICK], [0], [Don't have ImageMagick])])
 ])
+AS_IF([test "x$enable_imagemagick" = "xyes"], [
+   PKG_CHECK_MODULES([MAGICKCORE], [MagickCore >= 7],
+   [AC_DEFINE([MAGICKCORE_7_OR_NEWER], [1], [MagickCore >= 7])],
+   [AC_DEFINE([MAGICKCORE_7_OR_NEWER], [0], [MagickCore < 7])])
+])
 
 #--------------------------------------------------------------------
 # Check for International Components for Unicode
@@ -439,33 +466,37 @@ AC_ARG_ENABLE(icu,
   [  --disable-icu		Disable International Components for Unicode],,
   enable_icu=yes)
 
-AC_ARG_ENABLE(icu-config,
-  [  --disable-icu-config		Do not use the icu-config script to check
-				for ICU.],,
-  enable_icu_config=yes)
-
 AC_ARG_WITH(icu-library,
   [  --with-icu-library=PATH  	library path for ICU libraries (only checked
 				if not using icu-config)],
   icu_libdir="$withval", icu_libdir="no")
 
-if test $enable_icu = yes; then
-  if test "$enable_icu_config" = "yes"; then
-    AC_CHECK_ICU(4.0, have_icu=yes, have_icu=no)
-  else
-    have_icu=no;
+AS_IF([test "x$enable_icu" = "xyes"], [
+  # First attempt, icu-config
+  AC_CHECK_ICU(4.0,  [HAVE_ICU=1], [HAVE_ICU=0])
+
+  # If no icu-config, attempt pkg-config
+  if test $HAVE_ICU = 0; then
+    PKG_CHECK_MODULES([ICU], [icu-i18n > 49.0], [
+      AC_CHECK_HEADERS([unicode/uloc.h unicode/ulocdata.h unicode/ucol.h unicode/ucurr.h unicode/uregex.h unicode/ucal.h unicode/unorm2.h unicode/unum.h unicode/udat.h unicode/udatpg.h unicode/ustring.h unicode/usearch.h unicode/ucnv.h unicode/utext.h unicode/ubrk.h unicode/utypes.h],
+      HAVE_ICU=1)], [HAVE_ICU=0])
+  fi
+
+  if test $HAVE_ICU = 0; then
+    HAVE_ICU=0;
     AC_CHECKING([for libicu (icu-config disabled)])
     if test "$icu_libdir" != "no"; then
       ICU_LDFLAGS="-L$icu_libdir";
     fi
     saved_LDFLAGS="$LDFLAGS";
     LDFLAGS="$LDFLAGS $LIBS $ICU_LDFLAGS -licui18n -licuuc -licudata -lm"
-    AC_TRY_LINK([],[], have_icu="yes", have_icu="no");
+    AC_TRY_LINK([],[], HAVE_ICU=1, HAVE_ICU=0);
     LDFLAGS="$saved_LDFLAGS";
     ICU_LIBS="-licui18n -licuuc -licudata -lm" 
   fi
+
     
-  if test "$have_icu" = "yes"; then
+  if test $HAVE_ICU = 1; then
     AC_MSG_RESULT(yes)
     AC_CHECK_HEADERS(unicode/uchar.h unicode/ustring.h)
     GRAPHIC_LFLAGS="$ICU_LDFLAGS $ICU_LIBS $GRAPHIC_LFLAGS"
@@ -474,7 +505,7 @@ if test $enable_icu = yes; then
     AC_MSG_RESULT(no)
     AC_MSG_WARN([The International Components for Unicode (ICU) development headers and libraries do not appear to be available on this system.])
   fi
-fi
+])
 AC_SUBST(HAVE_ICU)
 
 #--------------------------------------------------------------------
@@ -510,10 +541,14 @@ BUILD_SOUND=
 AC_CHECK_HEADERS(sndfile.h, have_sndfile=yes, have_sndfile=no)
 AC_CHECK_HEADERS(ao/ao.h, have_ao=yes, have_ao=no)
 # Only if we have both...
-if test $have_sndfile = yes -a $have_ao = yes -a $enable_sound = yes; then
+if test "$have_sndfile" = yes -a "$have_ao" = yes -a "$enable_sound" = yes; then
    BUILD_SOUND="sound"
+   SOUND_LIBS=`pkg-config --libs sndfile ao`
+   SOUND_CFLAGS=`pkg-config --cflags sndfile ao`
 fi
 AC_SUBST(BUILD_SOUND)
+AC_SUBST(SOUND_LIBS)
+AC_SUBST(SOUND_CFLAGS)
 
 #--------------------------------------------------------------------
 # NSSpeechSynthesizer
@@ -525,11 +560,59 @@ BUILD_SPEECH=
 
 # has flite, for speech synthesis.
 AC_CHECK_LIB(flite, new_utterance, have_speech=yes, have_speech=no)
-AC_CHECK_HEADERS(flite/flite.h)
-if test $have_speech = yes -a $enable_speech = yes; then
+AC_CHECK_HEADERS(flite/flite.h, have_flite=yes, have_flite=no)
+if test "$have_flite" = yes -a "$have_speech" = yes -a "$enable_speech" = yes; then
    BUILD_SPEECH="speech say"
+   FLITE_BASE_LIBS="-lflite_usenglish -lflite_cmulex -lflite"
+   AC_CHECK_LIB(flite_cmu_us_kal16, register_cmu_us_kal16, have_kal16=yes, have_kal16=no, $FLITE_BASE_LIBS)
+   if test $have_kal16 = no; then
+      BUILD_SPEECH=
+   fi
 fi
 AC_SUBST(BUILD_SPEECH)
+
+#--------------------------------------------------------------------
+# NSSpeechRecognizer
+#--------------------------------------------------------------------
+AC_ARG_ENABLE(speech-recognizer, 
+  [  --disable-speech-recognizer          Disable speech recognition server],,
+  enable_speech_recognizer=yes)
+BUILD_SPEECH_RECOGNIZER=
+
+# has pocketsphinx, for speech recognition.
+AC_CHECK_LIB(pocketsphinx, ps_start_utt, have_speech_recognizer=yes, have_speech_recognizer=no)
+AC_CHECK_HEADERS(pocketsphinx/pocketsphinx_export.h, have_pocketsphinx=yes, have_pocketsphinx=no)
+if test "$have_pocketsphinx" = yes -a "$have_speech_recognizer" = yes -a "$enable_speech_recognizer" = yes; then
+   BUILD_SPEECH_RECOGNIZER="speech_recognizer"
+   RECOGNIZER_BASE_LIBS=`pkg-config --libs pocketsphinx sphinxbase`
+   RECOGNIZER_BASE_CFLAGS=`pkg-config --cflags pocketsphinx sphinxbase`
+   RECOGNIZER_ENGINE_CLASS=PocketsphinxSpeechRecognitionEngine.m
+fi
+AC_SUBST(BUILD_SPEECH_RECOGNIZER)
+AC_SUBST(RECOGNIZER_BASE_LIBS)
+AC_SUBST(RECOGNIZER_BASE_CFLAGS)
+AC_SUBST(RECOGNIZER_ENGINE_CLASS)
+
+#--------------------------------------------------------------------
+# NSMovie / NSMovieView
+#--------------------------------------------------------------------
+AC_ARG_ENABLE(movie, 
+  [  --disable-movie          Disable NSMovie/NSMovieView functionality],,
+  enable_movie=yes)
+BUILD_MOVIE=
+
+# has avcodec
+AC_CHECK_LIB(avcodec, avcodec_find_decoder, have_avcodec=yes, have_avcodec=no)
+AC_CHECK_HEADERS(libavcodec/avcodec.h, have_codec=yes, have_codec=no)
+if test "$have_avcodec" = yes -a "$have_codec" = yes -a "$have_ao" = yes -a "$enable_movie" = yes; then
+   AC_DEFINE(HAVE_AVCODEC,1,[Define if you have avcodec for NSMovie])
+   BUILD_MOVIE="yes"
+   MOVIE_BASE_LIBS=`pkg-config --libs libavcodec libavformat libavutil libswscale`
+   MOVIE_BASE_CFLAGS=`pkg-config --cflags libavcodec libavformat libavutil libswscale`
+fi
+AC_SUBST(MOVIE_BASE_LIBS)
+AC_SUBST(MOVIE_BASE_CFLAGS)
+AC_SUBST(BUILD_MOVIE)
 
 #--------------------------------------------------------------------
 # Find CUPS
@@ -606,6 +689,12 @@ fi
 AC_SUBST(WARN_FLAGS)
 
 #--------------------------------------------------------------------
+# Get the Cflags and Libs values for gnustep-gui.pc
+#--------------------------------------------------------------------
+AC_SUBST(GUIFLAGS, `gnustep-config --objc-flags`)
+AC_SUBST(GUILIBS, `gnustep-config --gui-libs`)
+
+#--------------------------------------------------------------------
 # Record the version
 #--------------------------------------------------------------------
 AC_MSG_CHECKING(for the version of gnustep-gui we are compiling)
@@ -644,5 +733,5 @@ static double rint(double a)     \
 #endif
 ])
 
-AC_CONFIG_FILES([config.make gui.make Headers/Additions/GNUstepGUI/GSVersion.h])
+AC_CONFIG_FILES([config.make gui.make Source/gnustep-gui.pc Headers/Additions/GNUstepGUI/GSVersion.h])
 AC_OUTPUT

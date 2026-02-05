@@ -2,9 +2,11 @@
 
    <abstract>ImageMagick image representation.</abstract>
 
-   Copyright (C) 2011 Free Software Foundation, Inc.
+   Copyright (C) 2011-2024 Free Software Foundation, Inc.
    
    Author:  Eric Wasylishen <ewasylishen@gmail.com>
+            Riccardo Mottola
+
    Date: June 2011
    
    This file is part of the GNUstep Application Kit Library.
@@ -43,7 +45,11 @@
 
 #if HAVE_IMAGEMAGICK
 
+#if MAGICKCORE_7_OR_NEWER
+#include <MagickCore/MagickCore.h>
+#else
 #include <magick/MagickCore.h>
+#endif
 
 @implementation GSImageMagickImageRep 
 
@@ -82,11 +88,19 @@
       NSSize res;
       if (image->units == PixelsPerCentimeterResolution)
 	{
+#if (MagickLibVersion >= 0x700)
+	  res = NSMakeSize(image->resolution.x * 2.54, image->resolution.y * 2.54);
+#else
 	  res = NSMakeSize(image->x_resolution * 2.54, image->y_resolution * 2.54);
+#endif
 	}
       else
 	{
+#if (MagickLibVersion >= 0x700)
+	  res = NSMakeSize(image->resolution.x, image->resolution.y);
+#else
 	  res = NSMakeSize(image->x_resolution, image->y_resolution);
+#endif
 	}
 
       if (res.width > 0 && res.height > 0)
@@ -111,17 +125,33 @@
   return bmp;
 }
 
+#define SIGNATURE_LENGTH 18
+
 + (NSArray*) imageRepsWithData: (NSData *)data allImages: (BOOL)allImages
 {
   NSMutableArray *reps = [NSMutableArray array];
 
   ExceptionInfo *exception = AcquireExceptionInfo();
   ImageInfo *imageinfo = CloneImageInfo(NULL);
-  Image *images, *image;
+  Image *images;
+  Image *image;
+  char signature[SIGNATURE_LENGTH];
   
   // Set the background color to transparent
   // (otherwise SVG's are rendered against a white background by default)
+#if (MagickLibVersion >= 0x700)
+  QueryColorCompliance("none", AllCompliance, &imageinfo->background_color, exception);
+#else
   QueryColorDatabase("none", &imageinfo->background_color, exception);
+#endif
+
+  memset(signature, 0, SIGNATURE_LENGTH);
+  [data getBytes: signature range: NSMakeRange([data length] - 18, 18)];
+  if (strncmp(signature, "TRUEVISION-XFILE.", 17) == 0)
+    {
+      NSWarnLog(@"Targa file detected!, giving a magick hint...");
+      strcpy(imageinfo->magick, "TGA");
+    }
 
   images = BlobToImage(imageinfo, [data bytes], [data length], exception);
 
@@ -232,7 +262,7 @@
 
 + (id) imageRepWithData: (NSData *)data
 {
-  return [[[self alloc] initWithData: data] autorelease];
+  return AUTORELEASE([[self alloc] initWithData: data]);
 }
 
 - (id) initWithData: (NSData *)data

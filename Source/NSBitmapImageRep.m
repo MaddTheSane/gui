@@ -2,7 +2,7 @@
 
    <abstract>Bitmap image representation.</abstract>
 
-   Copyright (C) 1996-2014 Free Software Foundation, Inc.
+   Copyright (C) 1996-2024 Free Software Foundation, Inc.
    
    Author:  Adam Fedor <fedor@gnu.org>
    Date: Feb 1996
@@ -147,7 +147,12 @@
 
   if (types == nil)
     {
-      types = [[NSArray alloc] initWithObjects: NSTIFFPboardType, nil];
+      types = [[NSArray alloc] initWithObjects:
+	NSTIFFPboardType,
+#if HAVE_LIBPNG
+	NSPasteboardTypePNG,
+#endif
+	nil];
     }
   
   return types;
@@ -439,10 +444,11 @@
 {
   NSDebugLLog(@"NSImage", @"Creating bitmap image with pw %d ph %d bps %d spp %d alpha %d, planar %d cs %@",
               (int)width,(int) height, (int)bps, (int)spp, alpha, isPlanar, colorSpaceName);
-  if (!bps || !spp || !width || !height) 
+  if (!bps || !spp || !width || !height)
     {
-      [NSException raise: NSInvalidArgumentException
-        format: @"Required arguments not specified creating NSBitmapImageRep"];
+      // Per Apple documentation, return nil if can't initialize.
+      NSLog(@"Cannot initialize image with bps = %ld, spp = %ld, width = %ld, height = %ld", bps, spp, width, height);
+      return nil;
     }
 
   _pixelsWide = width;
@@ -669,33 +675,62 @@
  * this is strictly necessary for OpenStep tiffs.
  */
 static unsigned int
-_get_bit_value(unsigned char *base, long msb_off, int bit_width)
+_get_bit_value(unsigned char *base, long msb_off, int bit_width,
+               NSBitmapFormat format)
 {
-  long lsb_off, byte1, byte2;
-  int shift, value;
+  if (bit_width == 16)
+    {
+      long byte1 = msb_off / 8;
+      long byte2 = byte1 + 1;
+      uint16_t value;
 
-  /*
-   * Firstly we calculate the position of the msb and lsb in terms
-   * of bit offsets and thus byte offsets. The shift is the number of
-   * spare bits left in the byte containing the lsb
-   */
-  lsb_off= msb_off+bit_width-1;
-  byte1= msb_off/8;
-  byte2= lsb_off/8;
-  shift= 7-(lsb_off%8);
+      if ((NSHostByteOrder() == NS_BigEndian && !(format & NSBitmapFormatSixteenBitLittleEndian)) ||
+          (NSHostByteOrder() == NS_LittleEndian && (format & NSBitmapFormatSixteenBitBigEndian)))
+        {
+          value = base[byte2] | base[byte1] << 8;
+        }
+      else
+        {
+          value = base[byte1] | base[byte2] << 8;
+        }
 
-  /*
-   * We now get the value from the byte array, possibly using two bytes if
-   * the required set of bits crosses the byte boundary. This is then shifted
-   * down to it's correct position and extraneous bits masked off before
-   * being returned.
-   */
-  value=base[byte2];
-  if (byte1!=byte2)
-    value|= base[byte1]<<8;
-  value >>= shift;
+      return value;
+    }
+  else if (bit_width == 32)
+    {
+      // FIXME Currently not handled
+      return 0;
+    }
+  else
+    {
+      long lsb_off, byte1, byte2;
+      unsigned int shift, value;
 
-  return value & ((1<<bit_width)-1);
+      /*
+       * Firstly we calculate the position of the msb and lsb in terms
+       * of bit offsets and thus byte offsets. The shift is the number of
+       * spare bits left in the byte containing the lsb
+       */
+      lsb_off = msb_off + bit_width - 1;
+      byte1 = msb_off / 8;
+      byte2 = lsb_off / 8;
+      shift = 7 - (lsb_off % 8);
+
+      /*
+       * We now get the value from the byte array, possibly using two bytes if
+       * the required set of bits crosses the byte boundary. This is then shifted
+       * down to it's correct position and extraneous bits masked off before
+       * being returned.
+       */
+      value = base[byte2];
+      if (byte1 != byte2)
+        {
+          value |= base[byte1] << 8;
+        }
+      value >>= shift;
+
+      return value & ((1 << bit_width) - 1);
+    }
 }
 
 /**
@@ -731,7 +766,7 @@ _get_bit_value(unsigned char *base, long msb_off, int bit_width)
           for (i = 0; i < _numColors; i++)
             {
               pixelData[i] = _get_bit_value(_imagePlanes[i] + line_offset, 
-                                            offset, _bitsPerSample);
+                                            offset, _bitsPerSample, _format);
             }
         }
     }
@@ -751,7 +786,7 @@ _get_bit_value(unsigned char *base, long msb_off, int bit_width)
           for (i = 0; i < _numColors; i++)
             {
               pixelData[i] = _get_bit_value(_imagePlanes[0] + line_offset, 
-                                            offset, _bitsPerSample);
+                                            offset, _bitsPerSample, _format);
               offset += _bitsPerSample;
             }
         }
@@ -760,35 +795,62 @@ _get_bit_value(unsigned char *base, long msb_off, int bit_width)
 
 static void
 _set_bit_value(unsigned char *base, long msb_off, int bit_width, 
-               unsigned int value)
+               NSBitmapFormat format, unsigned int value)
 {
-  long lsb_off, byte1, byte2;
-  int shift;
-  int all;
+  if (bit_width == 16)
+    {
+      long byte1 = msb_off / 8;
+      long byte2 = byte1 + 1;
+      uint16_t value16 = value;
 
-  /*
-   * Firstly we calculate the position of the msb and lsb in terms
-   * of bit offsets and thus byte offsets. The shift is the number of
-   * spare bits left in the byte containing the lsb
-   */
-  lsb_off= msb_off+bit_width-1;
-  byte1= msb_off/8;
-  byte2= lsb_off/8;
-  shift= 7-(lsb_off%8);
+      if ((NSHostByteOrder() == NS_BigEndian && !(format & NSBitmapFormatSixteenBitLittleEndian)) ||
+          (NSHostByteOrder() == NS_LittleEndian && (format & NSBitmapFormatSixteenBitBigEndian)))
+        {
+          base[byte1] = (value16 >> 8);
+          base[byte2] = (value16 & 255);
+        }
+      else
+        {
+          base[byte2] = (value16 >> 8);
+          base[byte1] = (value16 & 255);
+        }
+    }
+  else if (bit_width == 32)
+    {
+      // FIXME Currently not handled
+    }
+  else
+    {
+      long lsb_off, byte1, byte2;
+      int shift;
+      int all;
 
-  /*
-   * We now set the value in the byte array, possibly using two bytes if
-   * the required set of bits crosses the byte boundary. This value is 
-   * first shifted up to it's correct position and extraneous bits are 
-   * masked off.
-   */
-  value &= ((1<<bit_width)-1);
-  value <<= shift;
-  all = ((1<<bit_width)-1) << shift;
+      /*
+       * Firstly we calculate the position of the msb and lsb in terms
+       * of bit offsets and thus byte offsets. The shift is the number of
+       * spare bits left in the byte containing the lsb
+       */
+      lsb_off = msb_off + bit_width - 1;
+      byte1 = msb_off / 8;
+      byte2 = lsb_off/ 8;
+      shift = 7 - (lsb_off % 8);
 
-  if (byte1 != byte2)
-    base[byte1] = (value >> 8) | (base[byte1] & ~(all >> 8));
-  base[byte2] = (value & 255) | (base[byte2] & ~(all & 255));
+      /*
+       * We now set the value in the byte array, possibly using two bytes if
+       * the required set of bits crosses the byte boundary. This value is
+       * first shifted up to it's correct position and extraneous bits are
+       * masked off.
+       */
+      value &= ((1 << bit_width) - 1);
+      value <<= shift;
+      all = ((1 << bit_width) - 1) << shift;
+
+      if (byte1 != byte2)
+        {
+          base[byte1] = (value >> 8) | (base[byte1] & ~(all >> 8));
+        }
+      base[byte2] = (value & 255) | (base[byte2] & ~(all & 255));
+    }
 }
 
 /**
@@ -830,7 +892,7 @@ _set_bit_value(unsigned char *base, long msb_off, int bit_width,
           for (i = 0; i < _numColors; i++)
             {
               _set_bit_value(_imagePlanes[i] + line_offset, 
-                             offset, _bitsPerSample, pixelData[i]);
+                             offset, _bitsPerSample, _format, pixelData[i]);
             }
         }
     }
@@ -850,7 +912,7 @@ _set_bit_value(unsigned char *base, long msb_off, int bit_width,
           for (i = 0; i < _numColors; i++)
             {
               _set_bit_value(_imagePlanes[0] + line_offset, 
-                             offset, _bitsPerSample, pixelData[i]);
+                             offset, _bitsPerSample, _format, pixelData[i]);
               offset += _bitsPerSample;
             }
         }
@@ -1490,6 +1552,7 @@ _set_bit_value(unsigned char *base, long msb_off, int bit_width,
   [self _fillTIFFInfo: &info
      usingCompression: compression
                factor: factor];
+
   if (NSTiffWrite(image, &info, [self bitmapData]) != 0)
     {
       [NSException raise: NSTIFFException format: @"Writing data"];
@@ -2014,6 +2077,21 @@ _set_bit_value(unsigned char *base, long msb_off, int bit_width,
   info->height = _pixelsHigh;
   info->bitsPerSample = _bitsPerSample;
   info->samplesPerPixel = _numColors;
+  info->isBigEndian = NO;
+  info->is16Bit = NO;
+  info->is32Bit = NO;
+
+  // resolution/density
+  info->xdpi = 0;
+  info->ydpi = 0;
+  if (_pixelsWide != (int)(_size.width) || _pixelsHigh != (int)(_size.height))
+    {
+      float x_density, y_density;
+      x_density = _pixelsWide * 72 / _size.width;
+      y_density = _pixelsHigh * 72 / _size.height;
+      info->xdpi = x_density;
+      info->ydpi = y_density;
+    }
 
   if (_isPlanar)
     info->planarConfig = PLANARCONFIG_SEPARATE;
@@ -2051,6 +2129,27 @@ _set_bit_value(unsigned char *base, long msb_off, int bit_width,
     factor = 1;
   info->quality = factor * 100;
   info->error = 0;
+
+  if ((_format & NSBitmapFormatSixteenBitBigEndian) != 0)
+    {
+      info->isBigEndian = YES;
+      info->is16Bit = YES;
+    }
+  else if ((_format & NSBitmapFormatSixteenBitLittleEndian) != 0)
+    {
+      info->isBigEndian = NO;
+      info->is16Bit = YES;
+    }
+  else if ((_format & NSBitmapFormatThirtyTwoBitBigEndian) != 0)
+    {
+      info->isBigEndian = YES;
+      info->is32Bit = YES;
+    }
+  else if ((_format & NSBitmapFormatThirtyTwoBitLittleEndian) != 0)
+    {
+      info->isBigEndian = NO;
+      info->is32Bit = YES;
+    }
 }
 
 - (void) _premultiply
@@ -2417,7 +2516,8 @@ _set_bit_value(unsigned char *base, long msb_off, int bit_width,
                         }
                       fa = ia / _scale;
 
-                      if ((_format & NSAlphaNonpremultipliedBitmapFormat) !=
+                      if ((ia != 0 && fa < 1.0) &&
+                          (_format & NSAlphaNonpremultipliedBitmapFormat) !=
                           (bitmapFormat & NSAlphaNonpremultipliedBitmapFormat))
                         {
                           if (_format & NSAlphaNonpremultipliedBitmapFormat)
@@ -2556,7 +2656,8 @@ _set_bit_value(unsigned char *base, long msb_off, int bit_width,
                       fv = iv / _scale;
                       fa = ia / _scale;
 
-                      if ((_format & NSAlphaNonpremultipliedBitmapFormat) !=
+                      if ((ia != 0 && fa < 1.0) &&
+                          (_format & NSAlphaNonpremultipliedBitmapFormat) !=
                           (bitmapFormat & NSAlphaNonpremultipliedBitmapFormat))
                         {
                           if (_format & NSAlphaNonpremultipliedBitmapFormat)

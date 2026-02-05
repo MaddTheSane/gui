@@ -10,16 +10,16 @@
    This file is part of the GNUstep GUI Library.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
 
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
+   Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Library General Public
+   You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
    If not, write to the Free Software Foundation,
    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -57,6 +57,10 @@ NSString *NSSpeechModeText = @"NSSpeechModeText";
 NSString *NSSpeechModePhoneme = @"NSSpeechModePhoneme";
 NSString *NSSpeechModeNormal = @"NSSpeechModeNormal";
 NSString *NSSpeechModeLiteral = @"NSSpeechModeLiteral";
+
+NSString *NSSpeechResetProperty = @"NSSpeechResetProperty";
+NSString *NSSpeechOutputToFileURLProperty = @"NSSpeechOutputToFileURLProperty";
+NSString *NSSpeechPitchBaseProperty = @"NSSpeechPitchBaseProperty";
 
 // values for speech status...
 NSString *NSSpeechStatusOutputBusy = @"NSSpeechStatusOutputBusy";
@@ -98,58 +102,60 @@ static Class NSSpeechSynthesizerClass;
 - (NSSpeechSynthesizer*)newSynthesizer;
 @end
 
-@implementation NSSpeechSynthesizer 
+@implementation NSSpeechSynthesizer
+
 - (id) initWithVoice: (NSString *)voice 
 {
   return self;
 }
+
 + (void)initialize
 {
-	NSSpeechSynthesizerClass = [NSSpeechSynthesizer class];
-	server = [[NSConnection rootProxyForConnectionWithRegisteredName: @"GSSpeechServer"
-	                                                            host: nil] retain];
-	if (nil == server)
-	{
-		NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-		[ws launchApplication: @"GSSpeechServer"
-		             showIcon: NO
-		           autolaunch: NO];
-	}
+  NSSpeechSynthesizerClass = [NSSpeechSynthesizer class];
+  server = [[NSConnection rootProxyForConnectionWithRegisteredName: @"GSSpeechServer"
+                                                              host: nil] retain];
+  if (nil == server)
+    {
+      NSWorkspace *ws = [NSWorkspace sharedWorkspace];
+      [ws launchApplication: @"GSSpeechServer"
+                   showIcon: NO
+                 autolaunch: NO];
+    }
 }
+
 + (BOOL)isAnyApplicationSpeaking
 {
-	return [server isSpeaking];
+  return [server isSpeaking];
 }
+
 // Never really allocate one of these.  
 + (id)allocWithZone: (NSZone*)aZone
 {
-	if (self == NSSpeechSynthesizerClass)
-	{
-		if (nil == server && !serverLaunchTested)
-		{
-			unsigned int i=0;
-			// Wait for up to five seconds  for the server to launch, then give up.
-			for (i=0 ; i<50 ; i++)
-			{
-				server = 
-					[[NSConnection rootProxyForConnectionWithRegisteredName: 
-					@"GSSpeechServer"
-	                                                                   host: nil] 
-																retain];
-				if (nil != server)
-				{
-					break;
-				}
-				[NSThread sleepForTimeInterval: 0.1];
-			}
-			// Set a flag so we don't bother waiting for the speech server to
-			// launch the next time if it didn't work this time.
-			serverLaunchTested = YES;
-		}
-		// If there is no server, this will return nil
-		return [server newSynthesizer];
-	}
-	return [super allocWithZone: aZone];
+  if (self == NSSpeechSynthesizerClass)
+    {
+      if (nil == server && !serverLaunchTested)
+        {
+          unsigned int i = 0;
+          // Wait for up to five seconds  for the server to launch, then give up.
+          for (i=0 ; i < 50 ; i++)
+            {
+              server = [NSConnection rootProxyForConnectionWithRegisteredName: @"GSSpeechServer"
+                                                                         host: nil];
+              RETAIN(server);
+              if (nil != server)
+                {
+                  break;
+                }
+              [NSThread sleepForTimeInterval: 0.1];
+            }
+          // Set a flag so we don't bother waiting for the speech server to
+          // launch the next time if it didn't work this time.
+          serverLaunchTested = YES;
+        }
+      // If there is no server, this will return nil
+      return [server newSynthesizer];
+    }
+  return [super allocWithZone: aZone];
 }
 
 // configuring speech synthesis

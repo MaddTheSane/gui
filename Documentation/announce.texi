@@ -1,5 +1,5 @@
 @c -*- texinfo -*-
-@chapter ANNOUNCE
+@chapter Announcement
 @ifset TEXT-ONLY
 @include version.texi
 @end ifset
@@ -43,16 +43,22 @@ library, you will need to install Cairo.
 @ifset GNUSTEP-GUI-FTP-MACHINE
 The gnustep-gui-@value{GNUSTEP-GUI-VERSION}.tar.gz distribution
 file has been placed at @url{ftp://@value{GNUSTEP-GUI-FTP-MACHINE}/@value{GNUSTEP-GUI-FTP-DIRECTORY}}.
-@end ifset
 
-It is accompanied by gnustep-gui-@value{GNUSTEP-GUI-VERSION}.tar.gz.sig, a PGP signature
-which you can validate by putting both files in the same directory
-and using:
-`gpg --verify gnustep-gui-@value{GNUSTEP-GUI-VERSION}.tar.gz.sig'
+It is accompanied by gnustep-gui-@value{GNUSTEP-GUI-VERSION}.tar.gz.sig, a
+PGP signature which you can validate by putting both files in the same
+directory and using:
+
+@example
+gpg --verify gnustep-gui-@value{GNUSTEP-GUI-VERSION}.tar.gz.sig
+@end example
 
 Signature has been created using the key with the following
 fingerprint:
-`83AA E47C E829 A414 6EF8  3420 CA86 8D4C 9914 9679'
+
+@example
+83AA E47C E829 A414 6EF8  3420 CA86 8D4C 9914 9679
+@end example
+@end ifset
 
 Read the INSTALL file or the GNUstep-HOWTO for installation instructions.
 

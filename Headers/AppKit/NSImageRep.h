@@ -29,7 +29,7 @@
 
 #ifndef _GNUstep_H_NSImageRep
 #define _GNUstep_H_NSImageRep
-#import <GNUstepBase/GSVersionMacros.h>
+#import <AppKit/AppKitDefines.h>
 
 #import <Foundation/NSGeometry.h>
 #import <Foundation/NSObject.h>
@@ -46,6 +46,7 @@ enum {
   NSImageRepMatchesDevice
 };
 
+APPKIT_EXPORT_CLASS
 @interface NSImageRep : NSObject <NSCoding, NSCopying>
 {
   // Attributes
@@ -175,6 +176,15 @@ enum {
 + (NSArray *)registeredImageRepClasses;
 + (void)unregisterImageRepClass:(Class)imageRepClass;
 
+@end
+
+typedef struct CGImage *CGImageRef;
+@interface NSImageRep (GSQuartz)
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_6, GS_API_LATEST)
+- (CGImageRef)CGImageForProposedRect: (NSRect *)proposedDestRect 
+                         context: (NSGraphicsContext *)referenceContext 
+                           hints: (NSDictionary *)hints;
+#endif
 @end
 
 APPKIT_EXPORT NSString *NSImageRepRegistryChangedNotification;

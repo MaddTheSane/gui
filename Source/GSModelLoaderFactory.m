@@ -43,6 +43,11 @@
 #import "GNUstepGUI/GSModelLoaderFactory.h"
 
 @implementation GSModelLoader
++ (BOOL) canReadData: (NSData *)theData
+{
+  return NO;
+}
+
 + (NSString *) type
 {
   return nil;
@@ -108,6 +113,7 @@
 static NSMutableDictionary *_modelMap = nil;
 
 @implementation GSModelLoaderFactory
+
 + (void) initialize
 {
   NSArray *classes = GSObjCAllSubclassesOfClass([GSModelLoader class]);
@@ -166,7 +172,7 @@ static NSMutableDictionary *_modelMap = nil;
       NSEnumerator *oen = [sortedArray objectEnumerator];
       Class cls = nil;
 
-      while ((cls = [oen nextObject]) != nil && result == NO)
+      while ((cls = [oen nextObject]) != nil && result == nil)
 	{
 	  NSString *path = [modelPath stringByAppendingPathExtension: 
 					(NSString *)[cls type]];
@@ -221,4 +227,23 @@ static NSMutableDictionary *_modelMap = nil;
   
   return result;  
 }
+
++ (GSModelLoader *) modelLoaderForData: (NSData *)theData
+{
+  NSEnumerator *oen = [_modelMap objectEnumerator];
+  Class aClass = nil;
+  GSModelLoader *result = nil;
+  
+  while ((aClass = [oen nextObject]) != nil)
+    {
+      if ([aClass canReadData: theData])
+        {
+          result = AUTORELEASE([[aClass alloc] init]);
+          break;
+        }
+    }
+
+  return result;
+}
+
 @end

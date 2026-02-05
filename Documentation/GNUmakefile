@@ -27,7 +27,7 @@ GNUSTEP_LOCAL_ADDITIONAL_MAKEFILES=../gui.make
 include $(GNUSTEP_MAKEFILES)/common.make
 
 include ../Version
-#include ../config.make
+include ../config.make
 
 # The documents to be generated
 DOCUMENT_NAME = ReleaseNotes
@@ -75,6 +75,10 @@ MAN1_PAGES = \
 	say.1 \
 	set_show_service.1
 
+ifdef BUILD_SPEECH_RECOGNIZER
+MAN1_PAGES += GSSpeechRecognitionServer.1
+endif
+
 ReleaseNotes_AGSDOC_FILES = ReleaseNotes.gsdoc
 ReleaseNotes_DOC_INSTALL_DIR =  Developer/Gui
 
@@ -83,8 +87,6 @@ ReleaseNotes_DOC_INSTALL_DIR =  Developer/Gui
 # library, you need to modify that file to get the autogsdoc tool to use them.
 #
 DOCUMENT_NAME += Gui GuiAdditions
-Gui_DOC_INSTALL_DIR = Developer/Gui/Reference
-GuiAdditions_DOC_INSTALL_DIR = Developer/Gui/Additions
 
 -include GNUmakefile.preamble
 

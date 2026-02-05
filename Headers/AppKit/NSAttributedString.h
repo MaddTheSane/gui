@@ -29,7 +29,7 @@
 
 #ifndef _GNUstep_H_NSAttributedString
 #define _GNUstep_H_NSAttributedString
-#import <GNUstepBase/GSVersionMacros.h>
+#import <AppKit/AppKitDefines.h>
 
 #if OS_API_VERSION(GS_API_MACOSX, GS_API_LATEST)
 
@@ -39,7 +39,6 @@
 // for NSWritingDirection
 #import <AppKit/NSParagraphStyle.h>
 #import <AppKit/NSText.h>
-#import <AppKit/AppKitDefines.h>
 
 @class NSTextAttachment;
 @class NSFileWrapper;
@@ -77,6 +76,14 @@ APPKIT_EXPORT NSString *NSSuperscriptAttributeName;
 APPKIT_EXPORT NSString *NSToolTipAttributeName;
 APPKIT_EXPORT NSString *NSUnderlineColorAttributeName;
 APPKIT_EXPORT NSString *NSUnderlineStyleAttributeName;
+
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_8, GS_API_LATEST)
+APPKIT_EXPORT NSString *NSTextAlternativesAttributeName;
+#endif
+
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_6, GS_API_LATEST)
+APPKIT_EXPORT NSString *NSWritingDirectionAttributeName;
+#endif
 
 #if OS_API_VERSION(MAC_OS_X_VERSION_10_2, GS_API_LATEST)
 APPKIT_EXPORT NSString *NSGlyphInfoAttributeName;
@@ -119,6 +126,8 @@ APPKIT_EXPORT NSString *NSMacSimpleTextDocumentType;
 APPKIT_EXPORT NSString *NSHTMLTextDocumentType;
 APPKIT_EXPORT NSString *NSDocFormatTextDocumentType;
 APPKIT_EXPORT NSString *NSWordMLTextDocumentType;
+APPKIT_EXPORT NSString *NSOfficeOpenXMLTextDocumentType;
+APPKIT_EXPORT NSString *NSOpenDocumentTextDocumentType;
 
 // for HTML export
 
@@ -161,6 +170,9 @@ APPKIT_EXPORT NSString *NSWebPreferencesDocumentOption;
 APPKIT_EXPORT NSString *NSWebResourceLoadDelegateDocumentOption;
 APPKIT_EXPORT NSString *NSTextSizeMultiplierDocumentOption;
 
+// Private Attributes
+APPKIT_EXPORT NSString *NSTextInsertionUndoableAttributeName;
+
 /* Currently supported values for NSUnderlineStyleAttributeName.  */
 enum _NSUnderlineStyle
 {
@@ -187,6 +199,14 @@ enum
   GSNoUnderlineStyle = 0,
   NSSingleUnderlineStyle = 1,
 	NSUnderlineStrikethroughMask
+};
+#endif
+
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_11, GS_API_LATEST)
+typedef NSInteger NSWritingDirectionFormatType;
+enum {
+  NSWritingDirectionEmbedding = (0 << 1),
+  NSWritingDirectionOverride = (1 << 1)
 };
 #endif
 

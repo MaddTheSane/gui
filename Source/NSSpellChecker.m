@@ -59,6 +59,7 @@
 #import "AppKit/NSTextField.h"
 #import "AppKit/NSWindow.h"
 #import "GSGuiPrivate.h"
+#import "GNUstepBase/NSDebug+GNUstepBase.h"
 #import "GNUstepGUI/GSServicesManager.h"
 
 // prototype for function to create name for server
@@ -105,6 +106,12 @@ extern NSString *GSSpellServerName(NSString *checkerDictionary, NSString *langua
 @implementation GSServicesManager(NSSpellCheckerMethods)
 - (id)_launchSpellCheckerForLanguage: (NSString *)language
 {
+  if ([[NSUserDefaults standardUserDefaults] boolForKey: @"GSDisableSpellCheckerServer"])
+    {
+      GSOnceMLog(@"WARNING: spell checker disabled - reset 'GSDisableSpellCheckerServer' to NO in defaults to re-enable");
+      return nil;
+    }
+
   id<NSSpellServerPrivateProtocol> proxy = nil;
   NSDictionary *spellCheckers = [_allServices objectForKey: @"BySpell"];
   NSDictionary *checkerDictionary = [spellCheckers objectForKey: language];
@@ -131,7 +138,7 @@ extern NSString *GSSpellServerName(NSString *checkerDictionary, NSString *langua
       [(NSDistantObject *)proxy setProtocolForProxy: 
 			    @protocol(NSSpellServerPrivateProtocol)];
     }
-			  
+
   return proxy;
 }
 
@@ -160,6 +167,21 @@ static int __documentTag = 0;
       // Initial version
       [self setVersion:1];
     }
+}
+
++ (BOOL)isAutomaticTextReplacementEnabled
+{
+  return NO;
+}
+
++ (BOOL)isAutomaticDashSubstitutionEnabled
+{
+  return NO;
+}
+
++ (BOOL)isAutomaticQuoteSubstitutionEnabled
+{
+  return NO;
 }
 
 //
@@ -442,6 +464,16 @@ static int __documentTag = 0;
   NS_ENDHANDLER
 
   return nil;
+}
+
+- (NSRange)checkGrammarOfString:(NSString *)stringToCheck
+		     startingAt:(NSInteger)startingOffset
+		       language:(NSString *)language
+		           wrap:(BOOL)wrapFlag
+	 inSpellDocumentWithTag:(NSInteger)tag
+			details:(NSArray **)details
+{
+  return NSMakeRange(NSNotFound, 0);
 }
 
 //

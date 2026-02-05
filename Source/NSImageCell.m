@@ -2,7 +2,7 @@
 
    <abstract>The image cell class</abstract>
 
-   Copyright (C) 1999, 2005 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2005-2022 Free Software Foundation, Inc.
 
    Author: Jonathan Gapen <jagapen@smithlab.chem.wisc.edu>
    Date: 1999
@@ -51,7 +51,7 @@
 {
   if (self == [NSImageCell class])
     {
-      [self setVersion: 1];
+      [self setVersion: 2];
     }
 }
 
@@ -63,16 +63,26 @@
   return [self initImageCell: nil];
 }
 
-- (void) setImage:(NSImage *)anImage
+- (id) initImageCell: (NSImage*)anImage
 {
-  [super setImage:anImage];
+  self = [super initImageCell: anImage];
+  if (self != nil)
+    {
+      [self setRefusesFirstResponder: YES];
+    }
+  return self;
+}
+
+- (void) setImage: (NSImage *)anImage
+{
+  [super setImage: anImage];
   if (anImage)
     _original_image_size = [anImage size];
   else
     _original_image_size = NSMakeSize(1,1);
 }
 
-- (void)setObjectValue:(id)object
+- (void) setObjectValue: (id)object
 {
   if ((object == nil) || ([object isKindOfClass:[NSImage class]]))
     {
@@ -306,9 +316,14 @@ yBottomInRect(NSSize innerSize, NSRect outerRect, BOOL flipped)
     }
   else
     {
-      [aCoder encodeValueOfObjCType: @encode(int) at: &_imageAlignment];
-      [aCoder encodeValueOfObjCType: @encode(int) at: &_frameStyle];
-      [aCoder encodeValueOfObjCType: @encode(int) at: &_imageScaling];
+      NSInteger tmp;
+
+      tmp = _imageAlignment;
+      encode_NSInteger(aCoder, &tmp);
+      tmp = _frameStyle;
+      encode_NSInteger(aCoder, &tmp);
+      tmp = _imageScaling;
+      encode_NSInteger(aCoder, &tmp);
       [aCoder encodeSize: _original_image_size];
     }
 }
@@ -338,9 +353,20 @@ yBottomInRect(NSSize innerSize, NSRect outerRect, BOOL flipped)
 	}
       else
 	{
-	  [aDecoder decodeValueOfObjCType: @encode(int) at: &_imageAlignment];
-	  [aDecoder decodeValueOfObjCType: @encode(int) at: &_frameStyle];
-	  [aDecoder decodeValueOfObjCType: @encode(int) at: &_imageScaling];
+          NSInteger tmp;
+          NSUInteger version = [aDecoder versionForClassName: @"NSImageCell"];
+          
+          if (version == 1)
+            {
+              [self setRefusesFirstResponder: YES];
+            }
+          
+          decode_NSInteger(aDecoder, &tmp);
+          _imageAlignment = tmp;
+          decode_NSInteger(aDecoder, &tmp);
+          _frameStyle = tmp;
+          decode_NSInteger(aDecoder, &tmp);
+          _imageScaling = tmp;
 	  _original_image_size = [aDecoder decodeSize];
 	}
     }

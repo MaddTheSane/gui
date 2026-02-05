@@ -29,13 +29,17 @@
 
 #import <AppKit/NSNibDeclarations.h>
 #import <AppKit/NSResponder.h>
+#import <AppKit/NSSeguePerforming.h>
 
 @class NSString;
 @class NSArray;
 @class NSWindow;
 @class NSDocument;
+@class NSMapTable;
+@class NSStoryboard;
 
-@interface NSWindowController : NSResponder <NSCoding>
+APPKIT_EXPORT_CLASS
+@interface NSWindowController : NSResponder <NSCoding, NSSeguePerforming>
 {
   @private
     NSWindow            *_window;
@@ -45,6 +49,8 @@
     NSDocument          *_document;
     NSArray             *_top_level_objects;
     id                  _owner;
+    NSMapTable          *_segueMap;
+    NSStoryboard        *_storyboard; // a weak reference to the origin storyboard
     struct ___wcFlags 
     {
       unsigned int should_close_document:1;

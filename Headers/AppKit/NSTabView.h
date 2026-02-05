@@ -45,6 +45,7 @@ typedef enum {
 @class NSFont;
 @class NSTabViewItem;
 
+APPKIT_EXPORT_CLASS
 @interface NSTabView : NSView <NSCoding>
 {
   NSMutableArray *_items;
@@ -107,7 +108,16 @@ typedef enum {
 
 @end
 
-@interface NSObject(NSTabViewDelegate)
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_6, GS_API_LATEST)
+@protocol NSTabViewDelegate <NSObject>
+#if GS_PROTOCOLS_HAVE_OPTIONAL
+@optional
+#endif
+#else
+/** <ignore> */
+@interface NSObject (NSTabViewDelegate)
+/** </ignore> */
+#endif
 - (BOOL)tabView:(NSTabView *)tabView shouldSelectTabViewItem:(NSTabViewItem *)tabViewItem;
 - (void)tabView:(NSTabView *)tabView willSelectTabViewItem:(NSTabViewItem *)tabViewItem;
 - (void)tabView:(NSTabView *)tabView didSelectTabViewItem:(NSTabViewItem *)tabViewItem;

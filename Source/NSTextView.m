@@ -1,6 +1,6 @@
 /** <title>NSTextView</title>
 
-   Copyright (C) 1996, 1998, 2000, 2001, 2002, 2003, 2008 Free Software Foundation, Inc.
+   Copyright (C) 1996, 1998, 2000, 2001, 2002, 2003, 2008, 2020 Free Software Foundation, Inc.
 
    Much code of this class was originally derived from code which was
    in NSText.m.
@@ -25,6 +25,9 @@
 
    Extensive reworking: Alexander Malmberg <alexander@malmberg.org>
    Date: December 2002 - February 2003
+
+   Implementing Catalina Extensions: Gregory Casamento <greg.casamento@gmail.com>
+   Date: August 2020
 
    This file is part of the GNUstep GUI Library.
 
@@ -61,6 +64,8 @@
 #import <Foundation/NSTimer.h>
 #import <Foundation/NSUndoManager.h>
 #import <Foundation/NSValue.h>
+#import <Foundation/NSAutoreleasePool.h>
+
 #import "AppKit/NSApplication.h"
 #import "AppKit/NSAttributedString.h"
 #import "AppKit/NSClipView.h"
@@ -71,6 +76,7 @@
 #import "AppKit/NSDragging.h"
 #import "AppKit/NSEvent.h"
 #import "AppKit/NSFileWrapper.h"
+#import "AppKit/NSFileWrapperExtensions.h"
 #import "AppKit/NSGraphics.h"
 #import "AppKit/NSImage.h"
 #import "AppKit/NSKeyValueBinding.h"
@@ -88,6 +94,7 @@
 #import "AppKit/NSTextStorage.h"
 #import "AppKit/NSTextView.h"
 #import "AppKit/NSWindow.h"
+
 #import "GSGuiPrivate.h"
 #import "GSTextFinder.h"
 #import "GSToolTips.h"
@@ -980,6 +987,10 @@ that makes decoding and encoding compatible with the old code.
         {
 	  NSTextContainer *container = [self buildUpTextNetwork: _frame.size];
 	  [container setTextView: self];
+
+          // These calls are here to make the text container aware of these settings
+          [self setHorizontallyResizable: _tf.is_horizontally_resizable];
+          [self setVerticallyResizable: _tf.is_vertically_resizable];
         }
 
       //@"NSDragTypes"
@@ -1131,6 +1142,7 @@ that makes decoding and encoding compatible with the old code.
       [notificationCenter removeObserver: _delegate
                           name: nil
                           object: _notifObject];
+      _delegate = nil;
     }
 
   DESTROY(_selectedTextAttributes);
@@ -1160,6 +1172,9 @@ to this method from the text container or layout manager.
 */
 - (void) setTextContainer: (NSTextContainer *)container
 {
+
+  ENTER_POOL
+  
   NSUInteger i, c;
   NSArray *tcs;
   NSTextView *other;
@@ -1223,6 +1238,8 @@ to this method from the text container or layout manager.
   _currentInsertionPointMovementDirection = 0;
 
   [self _updateMultipleTextViews];
+  
+  LEAVE_POOL
 }
 
 - (void) replaceTextContainer: (NSTextContainer *)newContainer
@@ -4015,12 +4032,8 @@ Figure out how the additional layout stuff is supposed to work.
    * were!  */
   [self drawViewBackgroundInRect: [self bounds]];
 
-  /* Then draw the special background of the new glyphs.  */
-  [_layoutManager drawBackgroundForGlyphRange: drawnRange
-                  atPoint: _textContainerOrigin];
-
-  [_layoutManager drawGlyphsForGlyphRange: drawnRange 
-                  atPoint: _textContainerOrigin];
+  [self drawCharactersInRange: drawnRange
+               forContentView: self];
 
   if ([self shouldDrawInsertionPoint] &&
       [NSGraphicsContext currentContextDrawingToScreen])
@@ -4034,7 +4047,10 @@ Figure out how the additional layout stuff is supposed to work.
     }
 
   // Remove any existing tooltips in the redrawn rectangle.
-  [[GSToolTips tipsForView: self] removeToolTipsInRect: rect];
+  if (_rFlags.has_tooltips != 0)
+  {
+    [[GSToolTips tipsForView: self] removeToolTipsInRect: rect];
+  }
   {
     NSRange r;
     NSUInteger i = drawnRange.location;
@@ -4967,6 +4983,44 @@ right.)
 	  RELEASE(attachment);
 	  return YES;
 	}
+      if ([type isEqualToString: NSFilenamesPboardType])
+	{
+          NSArray *list = [pboard propertyListForType: NSFilenamesPboardType];
+          NSMutableAttributedString *as = [[NSMutableAttributedString alloc] init]; 
+
+	  id<NSFastEnumeration> enumerator = list;
+	  FOR_IN (NSString*, filename, enumerator)
+	   {
+	      NSFileWrapper *fw = [[NSFileWrapper alloc] initWithPath: filename];
+	      if (fw) 
+	        {
+	          NSTextAttachment *attachment = [[NSTextAttachment alloc] 
+					         initWithFileWrapper: fw];
+	          NSAttributedString *asat =
+	            [NSAttributedString attributedStringWithAttachment: attachment];
+
+	          RELEASE(fw);
+	          RELEASE(attachment);
+
+	          [as appendAttributedString: asat];
+	        }
+	   }
+	  END_FOR_IN(enumerator)
+
+          if ([as length] != 0  && changeRange.location != NSNotFound &&
+	      [self shouldChangeTextInRange: changeRange
+		replacementString: [as string]])
+            {
+	      [self replaceCharactersInRange: changeRange
+		withAttributedString: as];
+	      [self didChangeText];
+	      changeRange.length = [as length];
+	      [self setSelectedRange: NSMakeRange(NSMaxRange(changeRange),0)];
+	    }
+
+	RELEASE(as);
+	return YES;
+      }
     }
 
   // color accepting
@@ -5063,6 +5117,7 @@ right.)
       [ret addObject: NSRTFDPboardType];
       [ret addObject: NSTIFFPboardType];
       [ret addObject: NSFileContentsPboardType];
+      [ret addObject: NSFilenamesPboardType];
     }
   if (_tf.is_rich_text)
     {
@@ -5539,12 +5594,18 @@ other than copy/paste or dragging. */
       if (granularity == NSSelectByCharacter)
 	{
 	  NSTextAttachment *attachment;
+	  NSInteger startIndexNoFraction;
+
+	  /* since we look for an attachment with by-character granularity,
+	     recalculate the index without resepecting fraction */
+	  startIndexNoFraction = [self _characterIndexForPoint: startPoint
+					       respectFraction: NO];
 
 	  /* Check if the click was on an attachment cell.  */
 	  attachment = [_textStorage attribute: NSAttachmentAttributeName
-				       atIndex: startIndex
+				       atIndex: startIndexNoFraction
 				effectiveRange: NULL];
-	      
+
 	  if (attachment != nil)
 	    {
 	      id <NSTextAttachmentCell> cell = [attachment attachmentCell];
@@ -5579,11 +5640,11 @@ other than copy/paste or dragging. */
 		  if ([cell wantsToTrackMouseForEvent: theEvent
 			inRect: cellFrame
 			ofView: self
-			atCharacterIndex: startIndex]
+			atCharacterIndex: startIndexNoFraction]
 		      && [cell trackMouse: theEvent
 				   inRect: cellFrame 
 				   ofView: self
-			 atCharacterIndex: startIndex
+			 atCharacterIndex: startIndexNoFraction
 			     untilMouseUp: NO])
 		    {
 		      return;
@@ -6077,6 +6138,113 @@ configuation! */
 		withTextView: self];
 }
 
+// NSTextFinder methods implementation...
+// isSelectable, isEditable, string, selectedRanges, setSelectedRanges, replaceCharactersInRange:withString:
+// implemented by NSTextView already...
+
+- (BOOL) allowsMultipleSelection
+{
+  return NO;
+}
+
+- (NSString *) stringAtIndex: (NSUInteger)characterIndex
+              effectiveRange: (NSRangePointer)outRange
+      endsWithSearchBoundary: (BOOL *)outFlag
+{
+  return [self string];
+}
+
+- (NSUInteger) stringLength
+{
+  return [[self string] length];
+}
+
+- (NSRange) firstSelectedRange
+{
+  NSValue *r = [[self selectedRanges] objectAtIndex: 0];
+  return [r rangeValue];
+}
+
+- (BOOL) shouldReplaceCharactersInRanges: (NSArray *)ranges withStrings: (NSArray *)strings
+{
+  NSUInteger idx = 0;
+  FOR_IN(NSValue*, rv, ranges)
+    {
+      NSRange r = [rv rangeValue];
+      NSString *str = [strings objectAtIndex: idx];
+      if (![self shouldChangeTextInRange: r replacementString: str])
+        {
+          return NO;
+        }
+      idx++;
+    }
+  END_FOR_IN(ranges);
+  return YES;
+}
+
+- (void) didReplaceCharacters
+{
+  [self didChangeText];
+}
+
+- (NSView *) contentViewAtIndex: (NSUInteger)index effectiveCharacterRange: (NSRangePointer)outRange
+{
+  return nil;
+}
+
+- (NSArray *) rectsForCharacterRange: (NSRange)range
+{
+  NSUInteger rectCount = 0;
+  NSRect *rects;
+  NSMutableArray *result = [NSMutableArray array];
+  NSUInteger idx = 0;
+
+  rects = [_layoutManager rectArrayForCharacterRange: range
+                        withinSelectedCharacterRange: NSMakeRange(NSNotFound, 0)
+                                     inTextContainer: _textContainer
+                                           rectCount: &rectCount];
+  
+  for (idx = 0; idx < rectCount; idx++)
+    {
+      NSRect r = rects[idx];
+      NSValue *v = [NSValue valueWithRect: r];
+      [result addObject: v];
+    }
+  
+  return result;
+}
+
+- (NSArray *) visibleCharacterRanges
+{
+  NSArray *result = nil;
+  
+  if (_layoutManager)
+    {
+      const NSRect visibleRect = [self visibleRect];
+      
+      NSRange visibleGlyphRange = [_layoutManager glyphRangeForBoundingRect: visibleRect
+                                                            inTextContainer: _textContainer];
+      
+      NSRange visibleRange = [_layoutManager characterRangeForGlyphRange: visibleGlyphRange
+                                                        actualGlyphRange: NULL];
+
+      NSValue *value = [NSValue valueWithRange: visibleRange];
+      result = [NSArray arrayWithObject: value];
+    }
+ 
+  return result;
+}
+
+- (void) drawCharactersInRange: (NSRange)range forContentView: (NSView *)view
+{
+  /* Then draw the special background of the new glyphs.  */
+  [_layoutManager drawBackgroundForGlyphRange: range
+                  atPoint: _textContainerOrigin];
+
+  [_layoutManager drawGlyphsForGlyphRange: range 
+                  atPoint: _textContainerOrigin];
+}
+
 @end
 
 
@@ -6353,13 +6521,15 @@ or add guards
 
 - (void) _scheduleTextCheckingTimer
 {
-  [_textCheckingTimer invalidate];
-  _textCheckingTimer = [NSTimer scheduledTimerWithTimeInterval: 0.5
-							target: self
-						      selector: @selector(_textCheckingTimerFired:) 
-						      userInfo: [NSValue valueWithRect: [self visibleRect]]
-						       repeats: NO];
-  
+  if ([[NSUserDefaults standardUserDefaults] boolForKey: @"GSDisableSpellCheckerServer"] == NO)
+    {
+      [_textCheckingTimer invalidate];
+      _textCheckingTimer = [NSTimer scheduledTimerWithTimeInterval: 0.5
+                                                            target: self
+                                                          selector: @selector(_textCheckingTimerFired:) 
+                                                          userInfo: [NSValue valueWithRect: [self visibleRect]]
+                                                           repeats: NO];  
+    }
 }
 
 - (void) _scheduleTextCheckingInVisibleRectIfNeeded

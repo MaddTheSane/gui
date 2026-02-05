@@ -41,6 +41,7 @@
 #import "AppKit/NSWindow.h"
 #import "GNUstepGUI/GSTheme.h"
 #import "GSBindingHelpers.h"
+#import "GSGuiPrivate.h"
 
 /* The image to use in a specific popupbutton depends on type and
  * preferred edge; that is, _pbc_image[0] if it is a
@@ -122,7 +123,8 @@ static NSImage *_pbc_image[5];
 
   [self _initMenu];
   [self setPullsDown: flag];
-  _pbcFlags.usesItemFromMenu = YES;
+  [self setAltersStateOfSelectedItem: YES];
+  [self setUsesItemFromMenu: YES];
   [self setPreferredEdge: NSMaxYEdge];
   [self setArrowPosition: NSPopUpArrowAtCenter];
 
@@ -145,18 +147,12 @@ static NSImage *_pbc_image[5];
     {
       [self dismissPopUp];
     }
-  /* 
-   * We don't use methods here to clean up the selected item, the menu
-   * item and the menu as these methods internally update the menu,
-   * which tries to access the target of the menu item (or of this cell). 
-   * When the popup is relases this target may already have been freed, 
-   * so the local reference to it is invalid and will result in a 
-   * segmentation fault. 
-   */
+
   if (_menu != nil)
     {
-      NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-      [nc removeObserver: self name: nil object: _menu];
+      // prevent further actions on the menu
+      _pbcFlags.usesItemFromMenu = NO;
+      [self setMenu: nil];
     }
   _selectedItem = nil;
   [super dealloc];
@@ -181,6 +177,12 @@ static NSImage *_pbc_image[5];
       [nc removeObserver: self
                     name: nil
                   object: _menu];
+    }
+  if (_selectedItem != nil)
+    {
+      // _selectedItem may be dead after the following ASSIGN statement,
+      // so make sure we leave no dangling pointer behind.
+      _selectedItem = nil;
     }
   ASSIGN(_menu, menu);
   if (_menu != nil)
@@ -208,8 +210,9 @@ static NSImage *_pbc_image[5];
       [self setMenuView: nil];
     }
   
-  // FIXME: Select the first or last item?
-  [self selectItemAtIndex: [_menu numberOfItems] - 1];
+  // Select the first item because that is the only selection that makes
+  // sense for pull downs.
+  [self selectItemAtIndex: [_menu numberOfItems] > 0 ? 0 : - 1];
   [self synchronizeTitleAndSelectedItem];
 }
 
@@ -330,13 +333,16 @@ static NSImage *_pbc_image[5];
 {
   id <NSMenuItem> selectedItem = [self selectedItem];
 
-  if (flag)
+  if (!_pbcFlags.pullsDown)
     {
-      [selectedItem setState: NSOnState];
-    }
-  else
-    {
-      [selectedItem setState: NSOffState];
+      if (flag)
+	{
+	  [selectedItem setState: NSOnState];
+	}
+      else
+	{
+	  [selectedItem setState: NSOffState];
+	}
     }
 
   _pbcFlags.altersStateOfSelectedItem = flag;
@@ -671,7 +677,7 @@ static NSImage *_pbc_image[5];
 
   if (_selectedItem != nil)
     {
-      if (_pbcFlags.altersStateOfSelectedItem)
+      if (!_pbcFlags.pullsDown && _pbcFlags.altersStateOfSelectedItem)
         {
           [_selectedItem setState: NSOffState];
         }
@@ -688,7 +694,7 @@ static NSImage *_pbc_image[5];
 
   if (_selectedItem != nil)
     {
-      if (_pbcFlags.altersStateOfSelectedItem)
+      if (!_pbcFlags.pullsDown && _pbcFlags.altersStateOfSelectedItem)
         {
           [_selectedItem setState: NSOnState];
         }
@@ -1215,19 +1221,20 @@ static NSImage *_pbc_image[5];
     }
   else
     {    
-      int flag;
+      NSInteger flag;
+
       [aCoder encodeObject: _menu];
       [aCoder encodeConditionalObject: [self selectedItem]];
       flag = _pbcFlags.pullsDown;
-      [aCoder encodeValueOfObjCType: @encode(int) at: &flag];
+      encode_NSInteger(aCoder, &flag);
       flag = _pbcFlags.preferredEdge;
-      [aCoder encodeValueOfObjCType: @encode(int) at: &flag];
+      encode_NSInteger(aCoder, &flag);
       flag = _pbcFlags.usesItemFromMenu;
-      [aCoder encodeValueOfObjCType: @encode(int) at: &flag];
+      encode_NSInteger(aCoder, &flag);
       flag = _pbcFlags.altersStateOfSelectedItem;
-      [aCoder encodeValueOfObjCType: @encode(int) at: &flag];
+      encode_NSInteger(aCoder, &flag);
       flag = _pbcFlags.arrowPosition;
-      [aCoder encodeValueOfObjCType: @encode(int) at: &flag];
+      encode_NSInteger(aCoder, &flag);
     }
 }
 
@@ -1313,7 +1320,7 @@ static NSImage *_pbc_image[5];
     }
   else
     {
-      int flag;
+      NSInteger flag;
       id<NSMenuItem> selectedItem;
       int version = [aDecoder versionForClassName: 
                                   @"NSPopUpButtonCell"];
@@ -1328,15 +1335,15 @@ static NSImage *_pbc_image[5];
       [self setMenu: nil];
       [self setMenu: menu];
       selectedItem = [aDecoder decodeObject];
-      [aDecoder decodeValueOfObjCType: @encode(int) at: &flag];
+      decode_NSInteger(aDecoder, &flag);
       _pbcFlags.pullsDown = flag;
-      [aDecoder decodeValueOfObjCType: @encode(int) at: &flag];
+      decode_NSInteger(aDecoder, &flag);
       _pbcFlags.preferredEdge = flag;
-      [aDecoder decodeValueOfObjCType: @encode(int) at: &flag];
+      decode_NSInteger(aDecoder, &flag);
       _pbcFlags.usesItemFromMenu = flag;
-      [aDecoder decodeValueOfObjCType: @encode(int) at: &flag];
+      decode_NSInteger(aDecoder, &flag);
       _pbcFlags.altersStateOfSelectedItem = flag;
-      [aDecoder decodeValueOfObjCType: @encode(int) at: &flag];
+      decode_NSInteger(aDecoder, &flag);
       _pbcFlags.arrowPosition = flag;
       
       if (version < 2)
@@ -1385,22 +1392,20 @@ static NSImage *_pbc_image[5];
 
   if (_control_view)
     {
-      GSKeyValueBinding *theBinding;
+      NSString *bindings[] = {NSSelectedIndexBinding, NSSelectedTagBinding,
+                              NSSelectedObjectBinding, NSSelectedValueBinding};
+      int i;
 
-      theBinding = [GSKeyValueBinding getBinding: NSSelectedIndexBinding 
-                                       forObject: _control_view];
-      if (theBinding != nil)
-        [theBinding reverseSetValueFor: NSSelectedIndexBinding];
+      for (i = 0; i < 4; i++)
+        {
+          NSString *binding = bindings[i];
+          GSKeyValueBinding *theBinding;
 
-      theBinding = [GSKeyValueBinding getBinding: NSSelectedTagBinding 
-                                       forObject: _control_view];
-      if (theBinding != nil)
-        [theBinding reverseSetValueFor: NSSelectedTagBinding];
-
-      theBinding = [GSKeyValueBinding getBinding: NSSelectedObjectBinding 
-                                       forObject: _control_view];
-      if (theBinding != nil)
-        [theBinding reverseSetValueFor: NSSelectedObjectBinding];
+          theBinding = [GSKeyValueBinding getBinding: binding 
+                                           forObject: _control_view];
+          if (theBinding != nil)
+            [theBinding reverseSetValueFor: binding];
+        }
     }
 
   [NSApp sendAction: [self action] to: [self target] from: _control_view];

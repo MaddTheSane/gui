@@ -50,7 +50,7 @@ relativeCenterPosition: (NSPoint)relativeCenterPoint;
 
 @implementation NSGradient
 
-- (NSColorSpace *) colorSpace; 
+- (NSColorSpace *) colorSpace
 {
   return _colorSpace;
 }
@@ -133,7 +133,7 @@ relativeCenterPosition: (NSPoint)relativeCenterPoint
     *location = _locations[index];
 }
 
-- (id) initWithColors: (NSArray *)colorArray;
+- (id) initWithColors: (NSArray *)colorArray
 {
   return [self initWithColors: colorArray 
                atLocations: NULL
@@ -142,7 +142,7 @@ relativeCenterPosition: (NSPoint)relativeCenterPoint
 
 - (id) initWithColors: (NSArray *)colorArray
           atLocations: (const CGFloat *)locations
-           colorSpace: (NSColorSpace *)colorSpace;
+           colorSpace: (NSColorSpace *)colorSpace
 {
   if ((self = [super init]))
     {
@@ -361,8 +361,8 @@ relativeCenterPosition: (NSPoint)relativeCenterPoint
   CGFloat endRadius;
   CGFloat distance;
 
-  NSAssert(relativeCenterPoint.x >= 0.0 && relativeCenterPoint.x <= 1.0, @"NSGradient invalid relative center point");
-  NSAssert(relativeCenterPoint.y >= 0.0 && relativeCenterPoint.y <= 1.0, @"NSGradient invalid relative center point");
+  NSAssert(relativeCenterPoint.x >= -1.0 && relativeCenterPoint.x <= 1.0, @"NSGradient invalid relative center point");
+  NSAssert(relativeCenterPoint.y >= -1.0 && relativeCenterPoint.y <= 1.0, @"NSGradient invalid relative center point");
   startCenter = NSMakePoint(NSMidX(rect), NSMidY(rect));
   endCenter = NSMakePoint(startCenter.x + rect.size.width * relativeCenterPoint.x, 
                           startCenter.y + rect.size.height * relativeCenterPoint.y);

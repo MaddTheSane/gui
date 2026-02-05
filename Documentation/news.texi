@@ -9,27 +9,333 @@
 The currently released version of the library is @samp{@value{GNUSTEP-GUI-VERSION}}.
 @end ifclear
 
+@section Noteworthy changes in version @samp{0.32.0}
+
+This version adds binding support for NSBrowser, NSOutlineView and NSTableView.
+Plus the usual bunch of bug fixes.
+ 
+@itemize @bullet
+@item Add support for bindings in NSBrowser.
+@item Return top level object when loading .gorm files.
+@item Add bindings support to NSOutlineView,
+@item Add support for 10.6 item-based delegate methods to NSBrowser.
+@item Add NSMenuToolbarItem.
+@item Add view based rendering to NSTableView and NSOutlineView.
+@item Add code to NSTreeController.
+@item Fix display of icons if the home is a symlink.
+@item Make some ivars in NSView protected instead of package scoped.
+@item Fix CI pipeline.
+@item Revert _updateFieldEditor: on NSTextFieldCell.
+@item GSTheme bug fix by Tom Sheffler <tom.sheffler@@gmail.com>.
+@item Fix memory leaks in test code.
+@item Don't load nil filename in NSImageRep.
+@item Prevent flickering in NSClipView. 
+@item Simplify ICU configuration.
+@item Move GSColorSliderCell into gui itself.
+@item Bugfix for NSMenuView.
+@item Fix single colum handling in NSCollectionView.
+@item Additional GSTheme method(s) for NSTabView. 
+@item Modify NSComboBox to handle attributed strings.
+@item NSTextFieldCell: Decode placeholder string.
+@item Make white default selection highlight color for NSTableView.
+@item Implement showsresizeindicator.
+@item NSApplication: toggle menu item "Hide" title and action on user click.
+@item Add NSCellHitResult typedef, introduced in OSX 10.10.
+@item Make menu visiblity themable.
+@item Fix decoding alternateContents in NSButtonCell.
+@item Font Panel autosizing fix.
+@item Implement integerValue method in NSSliderCell.
+@item NSBox: use macro to decode NSInteger into enum.
+@item Fall back to pkgconfig for resolving libtiff.
+@item GSMemoryPanel: Only call GSDebug* in debug mode.
+@item Add APPKIT_EXPORT_CLASS, APPKIT_EXPORT annotations for some GS* classes.
+@item Push modal window to top later in process.
+@end itemize
+
+@ifclear ANNOUNCE-ONLY
+
+@section Noteworthy changes in version @samp{0.31.1}
+
+This is a bugfix release
+
+@itemize @bullet
+@item Fix bug decoding menu items (breaking archive)
+@item Remove use of deprecated lock from base library
+@end itemize
+
+@section Noteworthy changes in version @samp{0.31.0}
+
+This version adds view based cell support for NSTableView and NSOutlineView.
+Plus the usual bunch of bug fixes.
+
+@itemize @bullet
+@item Add TGA detection for ImageMagick extension.
+@item Correct endianess swapping for saving 16 and 32 bit TIFF images.
+@item NSParagraphStyle restore old behaviour to have default tab stops.
+@item Documentation updates.
+@item A fix for autogsdoc documentation creation.
+@item Improve theming for many classes.
+@item Correct keyEquivalentModifierMask decoding in XIB files.
+@item Add imageViewWithImage: to NSImageView.
+@item Add implementation of NSUserInterfaceItemIdentifier to NSView.
+@item Fix NSImageView intercepting mouse events when not editable
+@item Move NSBox method isOpaque to GSTheme.
+@item Many decoding improvements.
+@item Fix compiler warnings.
+@item Generate and install a gnustep-gui.pc file.
+@item Add support for NSFilenamenPboardType in NSTextView.
+@item Add support for NSPasteboardTypePNG in NSBitmapImageRep if the libpng is present.
+@item Add support for ImageMagick >= 7.0
+@item Increase pasteboard timeout to 30 seconds.
+@item Add NSAppearance implementation.
+@item Make PACKAGE_SCOPE public on MinGW.
+@item Started implementing NSShadow.
+@item Move awakeFromNib implementation to NSObject instead of NSView.
+@item Changes for libGIF 5.2 and later.
+@item Update NSViewController with lifeCycle methods.
+@item Avoid accessing instance variables in inline functions when compiling with MSVC.
+@item Add method removeAllItems to NSMenu.
+@item Add badge handling to NSDockTile.
+@item More improvements to layout constraints.
+@item Add implementation of NSDictionaryController.
+@item Add implementation of the NSCollectionView classes.
+@item Improve NSDrawer opening.
+@item Improver CI pipeline.
+@end itemize
+
+@section Noteworthy changes in version @samp{0.30.0}
+
+This version adds parsing support for layout constraints, compilation with MSVC
+and many new classes. Plus the usual bunch of bug fixes.
+
+@itemize @bullet
+@item Add classes NSStackView, NSGlyphInfo.
+@item Add more formal protocols to headers.
+@item Add extra pixels so that tool tip doesn't overrun the window.
+@item More improvements from Testplant.
+@item NSSplitView support different divider styles.
+@item Improve on Wayland support.
+@item NSPopUpButtonCell attempt to fix deallocation and item selection.
+@item NSImageCell fix refuse first responder.
+@item Improve NIB and XIB unarchiving.
+@item GSStandardWindowDecorationView fix resizing mode
+@item Make resize bar notch themable.
+@item NSButton add radio button behavior from MacOS 10.7.
+@item Fix clicking on test attachment cells.
+@item Add missing methods to GSLayoutManager.
+@item Add NSLayoutConstraint parsing.
+@item Add APPKIT_EXPORT_CLASS to support compilation with MSVC.
+@item Remove libgnustep-gui_INTERFACE_VERSION.
+@item Fix to build GSSpell in custom build dir.
+@item Add all new header files to DocMakefile.
+@item Fix memory leaks in NSView, NSTextView and NSBox.
+@item Add placeholder string handling in NSTextField.m.
+@item Apply userSpaceScaleFactor to title bar height when calculating offsets.
+@item Add new constants from MacOS 10.14 to NSBezierPath.
+@item Add README.md file.
+@item Add helper methods in GSWindowDecorator protocol for pointer hit test on window decorations.
+@item Improve support for 16 bit colour values in images.
+@item NSTextStorage update signatures to match MacOS.
+@item Add a preference to disable spellchecker.
+@item Fix crash in JPEG reading.
+@item Improve NSPopover and NSAccessibilityCustomAction.
+@item Support ImageMagick version >= 7.
+@item Add github workflow.
+@item Add icon for speech synthesizer.
+@end itemize
+
+
+@section Noteworthy changes in version @samp{0.29.0}
+
+This version adds support for storyboard files and many new
+classes. Plus the usual bunch of bug fixes.
+
+@itemize @bullet
+@item Support loading of storyboard files.
+@item Add classes NSSwitch, NSFontAssetRequest,
+NSMediaLibraryBrowserController, NSScrubberItemView, NSScrubberLayout,
+NSScrubber, NSSharingServicePickerToolbarItem, NSPathCell,
+NSPathComponentCell, NSPathControl, NSPathControlItem,
+NSPersistentDocument, NSAccessibilityCustomAction,
+NSAccessibilityCustomRotor, NSAccessibilityElement, NSStoryboard,
+NSStoryboardSegue, NSPageController, NSSplitViewController,
+NSSplitViewItem, NSTabViewController, NSLayoutAnchor,
+NSLayoutConstraint, NSLayoutGuide, NSStatusBarButton,
+NSTextCheckingController, NSTextFinder, NSTextInputContext,
+NSGridView.
+Some of these classes are still skeletons.
+@item Fix extraline fragment in text layout.
+@item Better encoding handling in RTF files.
+@item Add more italian translations.
+@item Add MacOSX methods to NSNib, NSMenu and NSWindow.
+@item Focus handling fixes for WindowMaker.
+@item Fix missing colours when loading old colour lists.
+@item Support JPEG export as greyscale image.
+@item Fix memory leak in NSPopupButtonCell.
+@item Fix toolbar flickering.
+@item NSSearchFieldCell use code from GSTheme to display popup.
+@item Fix int decoding to get it working on 64 bit big endian machines.
+@item Add tab stops after last defined at default intervals.
+@item Stop NSWindow from handling windows that are gone, but possibly
+returned by a slow window manager.
+@item Fix NSTableView/NSTableColumn bindings.
+@end itemize
+
+@section Noteworthy changes in version @samp{0.28.0}
+
+This version adds support for modern XIB files and many new
+classes. Plus the usual bunch of bug fixes.
+
+@itemize @bullet
+@item Support loading of document XIB files.
+@item Improve Key Value Binding for NSArrayController and add more bindings.
+@item Better support for multi monitor usage and other improvement in
+the backend integration.
+@item Add classes NSFontCollection, NSColorSampler, NSSpeechRecognizer,
+NSAppearance, NSPDFInfo, NSPICTImageRep, NSCIImageRep, NSPDFImageRep,
+NSPDFPanel, NSDataAsset, 
+NSDatePicker, NSDatePickerCell, NSPredicateEditor, 
+NSPredicateEditorRowTemplate, NSRuleEditor, NSGestureRecognizer,
+NSButtonTouchBarItem, NSCandidateListTouchBarItem,
+NSClickGestureRecognizer, NSColorPickerTouchBarItem,
+NSCustomTouchBarItem, NSGroupTouchBarItem,
+NSMagnificationGestureRecognizer, NSPanGestureRecognizer,
+NSPickerTouchBarItem, NSPopoverTouchBarItem, NSPressGestureRecognizer,
+NSRotationGestureRecognizer, NSSharingServicePickerTouchBarItem,
+NSSliderTouchBarItem, NSStepperTouchBarItem, NSTouchBarItem, NSTouchBar,
+NSTouch, NSDockTile.
+@item Implement NSEPSImageRep.
+@item Better encoding handling in RTF files.
+@item Theming and drawing improvements.
+@item Increase small font size to 10.
+@item New cursor and stepper images.
+@item Move NSFileWrapper to Foundation.
+@item Fixed build on Debian GNU/kFreeBSD.
+@item With command line argument -autolaunch YES, do not activate the
+application when -activateIgnoringOtherApps: is invoked.
+@item Improvements to WindowMaker compatibility (e.g. WMFHideApplication
+support).
+@item Lowered NSFloatingWindowLevel by one to distinguish floating panels from
+menus.
+@end itemize
+
+@section Noteworthy changes in version @samp{0.27.0}
+
+This version includes numerous bugfixes, compatibility
+improvements and other changes accumulated over the last year.
+It also enables work to be done on integrating NSViews with a Core
+Animation renderer.
+
+@itemize @bullet
+@item Make targetForAction safer.
+@item Speed up menu updates.
+@item Clean up speech tool compilation and switch to newer interface.
+@item Fix bug in CUPS subclassing introduced in last release.
+@item Minor improvements to typesetting.
+@item Add NSIsControllerMarker.
+@item Fix tracking on segmented cell.
+@item Bring slider cell closer to Cocoa implementation.
+@item Add ivar for Core Animation in NSView.
+@item Improve border calculation on printing.
+@item Lazy load app icon.
+@item Better detection of removable volumes.
+@item Polish translations.
+@item Japanese translations.
+@item Lots of bug fixes.
+@end itemize
+
+@section Noteworthy changes in version @samp{0.26.2}
+
+This version is a small, but important bugfix release.
+
+@itemize @bullet
+@item printing: Fix allocation of the CUPS printing classes.
+@item installation: Fix the configure script.
+@end itemize
+
+@section Noteworthy changes in version @samp{0.26.1}
+
+This version is released to conincide with version 1.25.1 of
+gnustep-base, which contains changes required for this version of
+gnustep-gui and gnustep-back.
+
+It includes an important workaround for users of GNUstep
+Objective-C Runtime (libobjc2) and non-fragile ABI to avoid a bug
+in interaction between the clang compiler and the runtime
+when non-fragile ABI is in use. Specifically, Clang and the
+runtime may disagree on what is the offset of an ivar
+in a class's RAM. This manifested in a crash at application
+startup due to misalignment of _gcontext inside NSThread. See
+the
+@uref{http://lists.gnu.org/archive/html/discuss-gnustep/2017-12/msg00129.html, mailing list discussion}
+for more information.
+
+It also contains the following changes:
+
+@itemize @bullet
+@item tests: Cleanup of warnings.
+@item tests: Fix text system deallocation test.
+@item printing: Undefine __BLOCKS__ before including cups.h, as some versions of the header expect that libdispatch is present and used if __BLOCKS__ is defined.
+@item graphics context: Workaround for Clang+libobjc2+nonfragile ABI issue.
+@end itemize
+
+@section Noteworthy changes in version @samp{0.26.0}
+
+This version was bumped due to previous binary incompatibilities
+between 0.25.0 and 0.25.1. This version also includes numerous
+compatibility improvements from the Summer of Code
+project, and a wide variety of other fixes. Notably, it fixes the
+use of cupsGetPPD() in the printing system.
+
+@itemize @bullet
+@item printing: Add an include to get deprecated function cupsGetPPD() on newer CUPS systems.
+@item chore: Bump required base version.
+@item tiff: Support for writing resolution.
+@item jpeg: Save resolution information if it is different from 72 dpi.
+@item save panel: Fix return type of sorting function.
+@item events: Add some newer Cocoa enums and one method with dummy implementation.
+@item speech synthesis: NSSpeechSynthesizerDelegate is now a @@protocol on runtimes that support it.
+@item pasteboard: New type identifiers.
+@item translations: Some work on Polish, Russian and German translations
+@item cell: Improvements to mouse tracking logic on NSCell.
+@item image: If an unknown named image is unarchived with a coder or keyed coder, keep the name.
+@item screen: Add -backingScaleFactor and return 1.0.
+@item window: Return 1.0 from -backingScaleFactor.
+
+@item compatibility: Numerous stub implementations of constants, classes and methods to improve source-level compatibility.
+@item other bugfixes
+@end itemize
+
+@section Noteworthy changes in version @samp{0.25.1}
+
+@itemize @bullet
+@item JPEG (saving) alpha channel fixes and size with resolution != 72
+@item JPEG resolution read support
+@item TIFF saving fixes
+@item Improved volumes mounting and support
+@item Portability improvements in volume mounting and support
+@item Corrected layout of empty strings
+@item Only update visible menus
+@end itemize
+
 @section Noteworthy changes in version @samp{0.25.0}
 
-- Fixes for new GIF library versions
-- Theming of named images for specific applications by the use of the
-  CFBundleIdentifier in the theme
-- New icons and corresponding constants for special folders, recycler
-  and others
-- Improvements in NSWorkspace icon lookup
-- Improvements in removable media commands, imported and cleaned from
-  GWorkspace
-- Numerous bug fixes and improvements in Cocoa compatibility
-- Numerous theme tweaks
-- Spanish locale
+@itemize @bullet
+@item Fixes for new GIF library versions
+@item Theming of named images for specific applications by the use of the CFBundleIdentifier in the theme
+@item New icons and corresponding constants for special folders, recycler and others
+@item Improvements in NSWorkspace icon lookup
+@item Improvements in removable media commands, imported and cleaned from GWorkspace
+@item Numerous bug fixes and improvements in Cocoa compatibility
+@item Numerous theme tweaks
+@item Spanish locale
+@end itemize
 
 @section Noteworthy changes in version @samp{0.24.1}
 
 From a look through ChangeLog, we can see a lot of bugfixes for this release,
 with the main focus on avoiding display glitches and improving OSX
 compatibility.
-
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.24.0}
 

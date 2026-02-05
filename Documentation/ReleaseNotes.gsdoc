@@ -16,9 +16,305 @@
       <heading>Gui Release Notes</heading>
       <p>
         The release notes include descriptions of API changes, behavior
-	changes and other information that might help developers and users
-	migrate to using a newer version of the library.
+        changes and other information that might help developers and users
+        migrate to using a newer version of the library.
       </p>
+
+      <section>
+        <heading>0.29.0</heading>
+        <p>
+          This version adds support for modern XIB files and many new
+          classes. Plus the usual bunch of bug fixes.
+        </p>
+        <deflist>
+          <term>storyboards</term>
+          <desc>Support loading of storyboard files.</desc>
+          <term>new classes</term>
+          <desc>Add classes NSSwitch, NSFontAssetRequest,
+          NSMediaLibraryBrowserController, NSScrubberItemView, NSScrubberLayout,
+          NSScrubber, NSSharingServicePickerToolbarItem, NSPathCell,
+          NSPathComponentCell, NSPathControl, NSPathControlItem,
+          NSPersistentDocument, NSAccessibilityCustomAction,
+          NSAccessibilityCustomRotor, NSAccessibilityElement, NSStoryboard,
+          NSStoryboardSegue, NSPageController, NSSplitViewController,
+          NSSplitViewItem, NSTabViewController, NSLayoutAnchor,
+          NSLayoutConstraint, NSLayoutGuide, NSStatusBarButton,
+          NSTextCheckingController, NSTextFinder, NSTextInputContext,
+          NSGridView.<br />
+          <br />
+          Some of these classes are still skeletons.</desc>
+          <term>text layout</term>
+          <desc>Fix extraline fragment in text layout.</desc>
+          <term>RTF</term>
+          <desc>Better encoding handling in RTF files.</desc>
+          <term>localization</term>
+          <desc>Add more italian translations.</desc>
+          <term>compatibility</term>
+          <desc>Add MacOSX methods to NSNib, NSMenu and NSWindow.</desc>
+          <term>window management compatibility</term>
+          <desc>Focus handling fixes for WindowMaker.<br />
+          Stop NSWindow from handling windows that are gone, but possibly
+returned by a slow window manager.</desc>
+          <term>bugfix</term>
+          <desc>Fix missing colours when loading old colour lists.<br />
+          Fix memory leak in NSPopupButtonCell.<br />
+          Fix toolbar flickering.<br />
+          Fix int decoding to get it working on 64 bit big endian machines.<br />
+          Add tab stops after last defined at default intervals.<br />
+          Fix NSTableView/NSTableColumn bindings.</desc>
+          <term>JPEG export improvements</term>
+          <desc>Support JPEG export as greyscale image.</desc>
+          <term>theming</term>
+          <desc>NSSearchFieldCell use code from GSTheme to display popup.</desc>
+        </deflist>
+      </section>
+
+      <section>
+        <heading>0.28.0</heading>
+        <p>
+          This version adds support for modern XIB files and many new
+          classes. Plus the usual bunch of bug fixes.
+        </p>
+        <deflist>
+          <term>XIB</term>
+          <desc>Support loading XIB5 files.</desc>
+          <term>key-value binding</term>
+          <desc>Improve Key Value Binding for NSArrayController and add more
+          bindings.</desc>
+          <term>multi-monitor support</term>
+          <desc>Better support for multi monitor usage and other improvement in
+          the backend integration.</desc>
+          <term>new classes</term>
+          <desc>NSFontCollection, NSColorSampler, NSSpeechRecognizer,
+          NSAppearance, NSPDFInfo, NSPICTImageRep, NSCIImageRep, NSPDFImageRep,
+          NSPDFPanel, NSDataAsset,
+          NSDatePicker, NSDatePickerCell, NSPredicateEditor,
+          NSPredicateEditorRowTemplate, NSRuleEditor, NSGestureRecognizer,
+          NSButtonTouchBarItem, NSCandidateListTouchBarItem,
+          NSClickGestureRecognizer, NSColorPickerTouchBarItem,
+          NSCustomTouchBarItem, NSGroupTouchBarItem,
+          NSMagnificationGestureRecognizer, NSPanGestureRecognizer,
+          NSPickerTouchBarItem, NSPopoverTouchBarItem, NSPressGestureRecognizer,
+          NSRotationGestureRecognizer, NSSharingServicePickerTouchBarItem,
+          NSSliderTouchBarItem, NSStepperTouchBarItem, NSTouchBarItem,
+          NSTouchBar, NSTouch, NSDockTile
+          </desc>
+          <term>formats</term>
+          <desc>Implement NSEPSImageRep. Marked GSImageMagickImageRep public.
+          PICT. Better encoding handling in RTF files.</desc>
+          <term>theming and drawing</term>
+          <desc>Increase small font size to 10. New cursor and stepper images.
+          Various improvements.Lowered NSFloatingWindowLevel by one to
+          distinguish floating panels from menus.</desc>
+          <term>NSFileWrapper move</term>
+          <desc>Move NSFileWrapper to Foundation.</desc>
+          <term>platform compatibility</term>
+          <desc>Fixed build on Debian GNU/kFreeBSD. Improvements to WindowMaker
+          compatibility (e.g. WMFHideApplication support).</desc>
+          <term>command line arguments</term>
+          <desc>With command line argument -autolaunch YES, do not activate the
+          application when -activateIgnoringOtherApps: is invoked.</desc>
+        </deflist>
+      </section>
+
+      <section>
+        <heading>0.27.0</heading>
+        <p>
+          This version includes numerous bugfixes, compatibility
+          improvements and other changes accumulated over the last year.
+          It also enables work to be done on integrating NSViews with a Core
+          Animation renderer.
+        </p>
+        <deflist>
+          <term>NSApplication</term>
+          <desc>Make targetForAction safer.</desc>
+          <term>NSMenu</term>
+          <desc>Speed up menu updates.</desc>
+          <term>Tools/speech</term>
+          <desc>Clean up speech tool compilation and switch to newer interface.</desc>
+          <term>printing</term>
+          <desc>Fix bug in CUPS subclassing introduced in last release.</desc>
+          <term>typesetting</term>
+          <desc>Minor improvments to typesetting.</desc>
+          <term>NSKeyValueBinding</term>
+          <desc>Add NSIsControllerMarker.</desc>
+          <term>NSSegmentedCell</term>
+          <desc>Fix tracking on segmented cell.</desc>
+          <term>NSSliderCell</term>
+          <desc>Bring slider cell closer to Cocoa implementation.</desc>
+          <term>NSView</term>
+          <desc>Add ivar for Core Animation in NSView.</desc>
+          <term>printing</term>
+          <desc>Improve border calculation on printing.</desc>
+          <term>NSApplication</term>
+          <desc>Lazy load app icon.</desc>
+          <term>NSWorkspace</term>
+          <desc>Better detection of removable volumes.</desc>
+          <term>translations</term>
+          <desc>Polish translations.</desc>
+          <term>translations</term>
+          <desc>Japanese translations.</desc>
+          <term>other</term>
+          <desc>Lots of bug fixes.</desc>
+        </deflist>
+      </section>
+      <section>
+        <heading>0.26.2</heading>
+        <p>
+	  This version is a small, but important bugfix release.
+	</p>
+	<deflist>
+	  <term>printing</term>
+	  <desc>Fix allocation of the CUPS printing classes.</desc>
+	  <term>installation</term>
+	  <desc>Fix the configure script.</desc>
+	</deflist>
+      </section>
+      <section>
+        <heading>0.26.1</heading>
+        <p>
+	  This version is released to conincide with version 1.25.1 of
+	  gnustep-base, which contains changes required for this version of
+	  gnustep-gui and gnustep-back.
+	</p>
+	<p>
+	  It includes an important workaround for users of GNUstep
+	  Objective-C Runtime (libobjc2) and non-fragile ABI to avoid a bug
+	  in interaction between the clang compiler and the runtime
+	  when non-fragile ABI is in use. Specifically, Clang and the
+	  runtime may disagree on what is the offset of an ivar
+	  in a class's RAM. This manifested in a crash at application
+	  startup due to misalignment of _gcontext inside NSThread. See
+	  the
+	  <uref url="http://lists.gnu.org/archive/html/discuss-gnustep/2017-12/msg00129.html">mailing list discussion</uref>
+	  for more information.
+	</p>
+	<p>
+	  It also contains the following changes:
+        </p>
+	<deflist>
+	  <term>tests</term>
+	  <desc>Cleanup of warnings.</desc>
+	  <term>tests</term>
+	  <desc>Fix text system deallocation test.</desc>
+	  <term>printing</term>
+	  <desc>Undefine __BLOCKS__ before including cups.h, as some versions of the header expect that libdispatch is present and used if __BLOCKS__ is defined.</desc>
+	  <term>graphics context</term>
+	  <desc>Workaround for Clang+libobjc2+nonfragile ABI issue.</desc>
+	</deflist>
+      </section>
+      <section>
+        <heading>0.26.0</heading>
+        <p>
+          Bumped due to binary incompatibilities between 0.25.0 and 0.25.1. Also
+          including numerous compatibility improvements from the Summer of Code
+          project, and a wide variety of other fixes. Fixes the use of
+          cupsGetPPD() in the printing system.
+        </p>
+        <deflist>
+          <term>printing</term>
+          <desc>Add an include to get deprecated function cupsGetPPD() on
+          newer CUPS systems.</desc>
+          <term>chore</term>
+          <desc>Bump required base version.</desc>
+          <term>tiff</term>
+          <desc>Support for writing resolution.</desc>
+          <term>jpeg</term>
+          <desc>Save resolution information if it is different from 72
+          dpi.</desc>
+          <term>save panel</term>
+          <desc>Fix return type of sorting function.</desc>
+          <term>events</term>
+          <desc>Add some newer Cocoa enums and one method with dummy
+          implementation.</desc>
+          <term>speech synthesis</term>
+          <desc>NSSpeechSynthesizerDelegate is now a @protocol on
+          runtimes that support it.</desc>
+          <term>pasteboard</term>
+          <desc>New type identifiers.</desc>
+          <term>translations</term>
+          <desc>Some work on Polish, Russian and German translations</desc>
+          <term>cell</term>
+          <desc>Improvements to mouse tracking logic on NSCell.</desc>
+          <term>image</term>
+          <desc>If an unknown named image is unarchived with a coder or
+          keyed coder, keep the name.</desc>
+          <term>screen</term>
+          <desc>Add backingScaleFactor and return 1.0.</desc>
+          <term>window</term>
+          <desc>Return 1.0 from -backingScaleFactor.</desc>
+
+          <term>compatibility</term>
+          <desc>Numerous stub implementations of constants, classes
+          and methods to improve source-level compatibility.</desc>
+          <term>other bugfixes</term>
+          <desc>Numerous other bugfixes.</desc>
+
+        </deflist>
+      </section>
+
+      <section>
+        <heading>0.25.1</heading>
+        <p>
+          New release.
+        </p>
+        <deflist>
+          <term>Image library fixes.</term>
+          <desc>
+            JPEG (saving) alpha channel fixes and size with resolution != 72.
+            JPEG resolution read support.
+            TIFF saving fixes.
+          </desc>
+          <term>Mounting.</term>
+          <desc>Improved volumes mounting and support. Portability improvements
+          in volume mounting and support</desc>
+          <term>Text layout.</term>
+          <desc>Corrected layout of empty strings.</desc>
+          <term>Optimizations.</term>
+          <desc>Only update visible menus.</desc>
+        </deflist>
+      </section>
+
+      <section>
+        <heading>0.25.0</heading>
+        <p>
+          New release. Bumped due to detected binary incompatibility between
+          0.24.0 and 0.24.1.
+        </p>
+        <deflist>
+          <term>GIF library update</term>
+          <desc>Fixes for new GIF library versions</desc>
+          <term>Theming improvements</term>
+          <desc>Theming of named images for specific applications by the use of
+          the CFBundleIdentifier in the theme. New icons and corresponding
+          constants for special folders, recycler and others.</desc>
+          <term>NSWorkspace</term>
+          <desc>Improvements in NSWorkspace icon lookup. Improvements in
+          removable media commands, imported and cleaned from GWorkspace.</desc>
+          <term>Other</term>
+          <desc>Numerous bug fixes and improvements in Cocoa compatibility.
+          Spanish locale.</desc>
+	</deflist>
+      </section>
+
+      <section>
+        <heading>0.24.1</heading>
+        <p>
+          From a look through ChangeLog, we can see a lot of bugfixes for this
+          release, with the main focus on avoiding display glitches and
+          improving OSX compatibility.
+        </p>
+        <deflist>
+          <term>NSColorListChangedNotification</term>
+          <desc>Removed.</desc>
+          <term>NSColorPanelColorChangedNotification</term>
+          <desc>Removed.</desc>
+          <term>NSImageInterpolation{Default,High,Low,None}</term>
+          <desc>Removed.</desc>
+          <term>NSPrintHorizonalPagination</term>
+          <desc>Removed.</desc>
+        </deflist>
+      </section>
 
      <section>
       	<heading>0.24.0</heading>

@@ -233,6 +233,7 @@ setPath(NSBrowser *browser, NSString *path)
   [_browser setAutoresizingMask: NSViewWidthSizable|NSViewHeightSizable];
   [_browser setTag: NSFileHandlingPanelBrowser];
   [_browser setAction: @selector(_selectText:)];
+  [_browser setDoubleAction: @selector(_doubleClick:)];
   [_browser setTarget: self];
   [_browser setMinColumnWidth: 140];
   [_topView addSubview: _browser];
@@ -345,9 +346,6 @@ setPath(NSBrowser *browser, NSString *path)
   [_okButton setNextKeyView: _browser];
   [self setDefaultButtonCell: [_okButton cell]];
   [_okButton release];
-
-  [_browser setDoubleAction: @selector(performClick:)];
-  [_browser setTarget: _okButton];
 
   r = NSMakeRect (8, 261, 48, 48);
   image = [[NSApplication sharedApplication] applicationIconImage];
@@ -508,6 +506,11 @@ setPath(NSBrowser *browser, NSString *path)
     }
 }
 
+- (void) _doubleClick: (id)sender
+{
+  [_okButton performClick: sender];
+}
+
 - (void) _selectText: (id)sender
 {
   [self _selectTextInColumn:[_browser selectedColumn]];
@@ -574,7 +577,7 @@ selectCellWithString: (NSString*)title
   else
     {
       ASSIGN (_directory, [path stringByAppendingPathComponent: title]);
-      ASSIGN (_fullFileName, nil);
+      DESTROY (_fullFileName);
     }
 
   [self _selectTextInColumn:column];
@@ -1656,16 +1659,15 @@ createRowsForColumn: (NSInteger)column
           column: (NSInteger)column;
 @end 
 
-static int compareFilenames (id elem1, id elem2, void *context)
+static NSComparisonResult compareFilenames (id elem1, id elem2, void *context)
 {
   /* TODO - use IMP optimization here.  */
-  NSSavePanel *s = context;
   NSSavePanel *self = (NSSavePanel *)context;
 
-  return (int)[s->_delegate panel: self
-		compareFilename: elem1
-		with: elem2
-		caseSensitive: YES];
+  return [self->_delegate panel: self
+             compareFilename: elem1
+                        with: elem2
+               caseSensitive: YES];
 }
 
 

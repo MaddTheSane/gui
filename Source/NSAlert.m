@@ -1651,8 +1651,8 @@ void NSBeginAlertSheet(NSString *title,
 		       NSString *otherButton, 
 		       NSWindow *docWindow, 
 		       id modalDelegate, 
-		       SEL willEndSelector, 
 		       SEL didEndSelector, 
+		       SEL didDismissSelector, 
 		       void *contextInfo, 
 		       NSString *msg, ...)
 {
@@ -1676,16 +1676,15 @@ void NSBeginAlertSheet(NSString *title,
   [NSApp beginSheet: panel
 	 modalForWindow: docWindow
 	 modalDelegate: modalDelegate
-	 didEndSelector: willEndSelector
+	 didEndSelector: didEndSelector
 	 contextInfo: contextInfo];
-
-  [panel close];
-  if (modalDelegate && [modalDelegate respondsToSelector: didEndSelector])
+  if (modalDelegate && [modalDelegate respondsToSelector: didDismissSelector])
     {
-      void (*didEnd)(id, SEL, id, NSInteger, void*);
-      didEnd = (void (*)(id, SEL, id, NSInteger, void*))[modalDelegate
-        methodForSelector: didEndSelector];
-      didEnd(modalDelegate, didEndSelector, panel, [panel result], contextInfo);
+      void (*didDismiss)(id, SEL, id, NSInteger, void*);
+      didDismiss = (void (*)(id, SEL, id, NSInteger, void*))[modalDelegate
+        methodForSelector: didDismissSelector];
+      didDismiss(modalDelegate, didDismissSelector, panel, [panel result],
+        contextInfo);
     }
 
   NSReleaseAlertPanel(panel);
@@ -1697,8 +1696,8 @@ void NSBeginCriticalAlertSheet(NSString *title,
 			       NSString *otherButton, 
 			       NSWindow *docWindow, 
 			       id modalDelegate, 
-			       SEL willEndSelector, 
 			       SEL didEndSelector, 
+			       SEL didDismissSelector, 
 			       void *contextInfo, 
 			       NSString *msg, ...)
 {
@@ -1716,15 +1715,15 @@ void NSBeginCriticalAlertSheet(NSString *title,
   [NSApp beginSheet: panel
 	 modalForWindow: docWindow
 	 modalDelegate: modalDelegate
-	 didEndSelector: willEndSelector
+	 didEndSelector: didEndSelector
 	 contextInfo: contextInfo];
-  [panel close];
-  if (modalDelegate && [modalDelegate respondsToSelector: didEndSelector])
+  if (modalDelegate && [modalDelegate respondsToSelector: didDismissSelector])
     {
-      void (*didEnd)(id, SEL, id, NSInteger, void*);
-      didEnd = (void (*)(id, SEL, id, NSInteger, void*))[modalDelegate
-        methodForSelector: didEndSelector];
-      didEnd(modalDelegate, didEndSelector, panel, [panel result], contextInfo);
+      void (*didDismiss)(id, SEL, id, NSInteger, void*);
+      didDismiss = (void (*)(id, SEL, id, NSInteger, void*))[modalDelegate
+        methodForSelector: didDismissSelector];
+      didDismiss(modalDelegate, didDismissSelector, panel, [panel result],
+        contextInfo);
     }
 
   NSReleaseAlertPanel(panel);
@@ -1736,8 +1735,8 @@ void NSBeginInformationalAlertSheet(NSString *title,
 				    NSString *otherButton,
 				    NSWindow *docWindow, 
 				    id modalDelegate, 
-				    SEL willEndSelector, 
 				    SEL didEndSelector, 
+				    SEL didDismissSelector, 
 				    void *contextInfo, 
 				    NSString *msg, ...)
 {
@@ -1757,18 +1756,76 @@ void NSBeginInformationalAlertSheet(NSString *title,
   [NSApp beginSheet: panel
 	 modalForWindow: docWindow
 	 modalDelegate: modalDelegate
-	 didEndSelector: willEndSelector
+	 didEndSelector: didEndSelector
 	 contextInfo: contextInfo];
-  [panel close];
-  if (modalDelegate && [modalDelegate respondsToSelector: didEndSelector])
+  if (modalDelegate && [modalDelegate respondsToSelector: didDismissSelector])
     {
-      void (*didEnd)(id, SEL, id, NSInteger, void*);
-      didEnd = (void (*)(id, SEL, id, NSInteger, void*))[modalDelegate
-        methodForSelector: didEndSelector];
-      didEnd(modalDelegate, didEndSelector, panel, [panel result], contextInfo);
+      void (*didDismiss)(id, SEL, id, NSInteger, void*);
+      didDismiss = (void (*)(id, SEL, id, NSInteger, void*))[modalDelegate
+        methodForSelector: didDismissSelector];
+      didDismiss(modalDelegate, didDismissSelector, panel, [panel result],
+        contextInfo);
     }
 
   NSReleaseAlertPanel(panel);
+}
+
+// Synchronous sheet-aware alert. If docWindow is nil, fall back to
+// NSRunAlertPanel which shows a modal alert. Otherwise display a sheet
+// attached to docWindow and run a modal loop until it completes.
+NSInteger
+NSRunAlertPanelRelativeToWindow(NSString *title,
+				NSString *msg,
+				NSString *defaultButton,
+				NSString *alternateButton,
+				NSString *otherButton,
+				NSWindow *docWindow, ...)
+{
+  va_list ap;
+  NSString *message = nil;
+  GSAlertPanel *panel = nil;
+  NSInteger result = 0;
+
+  va_start(ap, docWindow);
+  message = [NSString stringWithFormat: msg arguments: ap];
+  va_end(ap);
+
+  // Set the default button...
+  if (defaultButton == nil)
+    {
+      defaultButton = @"OK";
+    }
+
+  // Show a panel or a sheet depending on if we have a window...
+  if (docWindow == nil)
+    {
+      panel = getSomePanel(&standardAlertPanel,
+			   defaultTitle,
+			   title,
+			   message,
+                           defaultButton, alternateButton, otherButton);
+
+      result = [panel runModal];
+    }
+  else
+    {
+      panel = getSomeSheet(&informationalAlertPanel,
+			   defaultTitle,
+			   title,
+			   message,
+			   defaultButton, alternateButton, otherButton);
+
+      [NSApp beginSheet: panel
+	 modalForWindow: docWindow
+	  modalDelegate: nil
+	 didEndSelector: NULL
+	    contextInfo: NULL];
+      
+      result = [panel result];
+    }
+
+  NSReleaseAlertPanel(panel);
+  return result;
 }
 
 
@@ -2006,6 +2063,10 @@ void NSBeginInformationalAlertSheet(NSString *title,
              icon: _icon
              title: _message_text != nil ? _message_text : _(@"Alert")
 	     message: _informative_text != nil ? _informative_text : _(@"No information")];
+      if ([_buttons count] == 0)
+        {
+          [self addButtonWithTitle: @"OK"];
+        }
       [panel setButtons: _buttons];
     }
 }
@@ -2043,6 +2104,15 @@ void NSBeginInformationalAlertSheet(NSString *title,
          modalDelegate: self
          didEndSelector: @selector(_alertDidEnd:returnCode:contextInfo:)
          contextInfo: contextInfo];
+  DESTROY(_window);
+}
+
+- (void) beginSheetModalForWindow:(NSWindow *)sheet
+                completionHandler:(GSNSWindowDidEndSheetCallbackBlock)handler
+{
+  [self _setupPanel];
+  [sheet beginSheet: _window
+  completionHandler: handler];
   DESTROY(_window);
 }
 

@@ -89,7 +89,7 @@ cacheEqual(id A, id B)
 
 static NSDictionary	*blank;
 static NSLock		*attrLock = nil;
-static __strong GSIMapTable_t	attrMap;
+static GSIMapTable_t	attrMap;
 static SEL		lockSel;
 static SEL		unlockSel;
 static IMP		lockImp;
@@ -345,11 +345,11 @@ static SEL oatSel;
 static SEL remSel;
 
 static IMP	infImp;
-static void	(*addImp)();
-static unsigned (*cntImp)();
-static void	(*insImp)();
+static void	(*addImp)(NSMutableArray*, SEL, NSObject*);
+static unsigned (*cntImp)(NSMutableArray*, SEL);
+static void	(*insImp)(NSMutableArray*, SEL, NSObject*, NSUInteger);
 static IMP	oatImp;
-static void	(*remImp)();
+static void	(*remImp)(NSMutableArray*, SEL, NSUInteger);
 
 #define	NEWINFO(Z,O,L)	((*infImp)(infCls, infSel, (Z), (O), (L)))
 #define	ADDOBJECT(O)	((*addImp)(_infoArray, addSel, (O)))

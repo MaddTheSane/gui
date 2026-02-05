@@ -1,12 +1,12 @@
 /** <title>NSNib</title>
-   
+
    <abstract>
-   This class serves as a container for a nib file.  It's possible 
-   to load a nib file from a URL or from a bundle.   Using this 
-   class the nib file can now be "preloaded" and instantiated 
-   multiple times when/if needed.  Also, since it's possible to 
-   initialize this class using a NSURL it's possible to load 
-   nib files from remote locations. 
+   This class serves as a container for a nib file.  It's possible
+   to load a nib file from a URL or from a bundle.   Using this
+   class the nib file can now be "preloaded" and instantiated
+   multiple times when/if needed.  Also, since it's possible to
+   initialize this class using a NSURL it's possible to load
+   nib files from remote locations.
    <br/>
    This class uses: NSNibOwner and NSNibTopLevelObjects to allow
    the caller to specify the owner of the nib during instantiation
@@ -18,7 +18,7 @@
 
    Author: Gregory John Casamento <greg_casamento@yahoo.com>
    Date: 2004
-   
+
    This file is part of the GNUstep GUI Library.
 
    This library is free software; you can redistribute it and/or
@@ -33,14 +33,14 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, see <http://www.gnu.org/licenses/> or write to the 
-   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   If not, see <http://www.gnu.org/licenses/> or write to the
+   Free Software Foundation, 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.
-*/ 
+*/
 
 #import "config.h"
-#import <Foundation/NSArray.h>
 #import <Foundation/NSArchiver.h>
+#import <Foundation/NSArray.h>
 #import <Foundation/NSBundle.h>
 #import <Foundation/NSData.h>
 #import <Foundation/NSDebug.h>
@@ -52,6 +52,21 @@
 #import "AppKit/NSNib.h"
 #import "AppKit/NSNibLoading.h"
 #import "GNUstepGUI/GSModelLoaderFactory.h"
+
+
+@implementation NSObject (NSNibLoading)
+
+- (void) awakeFromNib
+{
+  // empty implementation, so that all objects respond...
+}
+
+- (void) prepareForInterfaceBuilder
+{
+  // empty implementation, so that all objects respond...
+}
+
+@end
 
 @implementation NSNib
 
@@ -80,12 +95,12 @@
  * any type of resource capable of being pointed to by the NSURL object.
  * A file in the local file system or a file on an ftp site.
  */
-- (id)initWithContentsOfURL: (NSURL *)nibFileURL
+- (id) initWithContentsOfURL: (NSURL *)nibFileURL
 {
   if ((self = [super init]) != nil)
     {
-      ASSIGN(_url, nibFileURL);
-
+      // Currently we need this short cut for GModel files.
+      // Remove this when the hack there is cleaned up.
       if ([nibFileURL isFileURL])
         {
           [self _readNibData: [nibFileURL path]];
@@ -94,10 +109,10 @@
         {
           NS_DURING
             {
-              ASSIGN(_loader, [GSModelLoaderFactory modelLoaderForFileType: 
+              ASSIGN(_loader, [GSModelLoaderFactory modelLoaderForFileType:
                                                       [[nibFileURL path] pathExtension]]);
               // load the nib data into memory...
-              _nibData = [NSData dataWithContentsOfURL: nibFileURL];
+              ASSIGN(_nibData, [NSData dataWithContentsOfURL: nibFileURL]);
             }
           NS_HANDLER
             {
@@ -111,10 +126,11 @@
 
 /**
  * Load the nib indicated by <code>nibNamed</code>.  If the <code>bundle</code>
- * argument is <code>nil</code>, then the main bundle is used to resolve 
+ * argument is <code>nil</code>, then the main bundle is used to resolve
  * the path, otherwise the bundle which is supplied will be used.
  */
-- (id)initWithNibNamed: (NSString *)nibNamed bundle: (NSBundle *)bundle
+- (instancetype) initWithNibNamed: (NSNibName)nibNamed
+                           bundle: (NSBundle *)bundle
 {
   if ((self = [super init]) != nil)
     {
@@ -142,15 +158,27 @@
   return self;
 }
 
+- (instancetype) initWithNibData: (NSData *)nibData
+                          bundle: (NSBundle *)bundle
+{
+  if ((self = [super init]) != nil)
+    {
+      ASSIGN(_bundle, bundle);
+      ASSIGN(_nibData, nibData);
+      ASSIGN(_loader, [GSModelLoaderFactory modelLoaderForData: nibData]);
+    }
+  return self;
+}
+
 /**
- * This is a GNUstep specific method.  This method is used when the caller 
- * wants the objects instantiated in the nib to be stored in the given 
+ * This is a GNUstep specific method.  This method is used when the caller
+ * wants the objects instantiated in the nib to be stored in the given
  * <code>zone</code>.
  */
-- (BOOL)instantiateNibWithExternalNameTable: (NSDictionary *)externalNameTable
-				   withZone: (NSZone *)zone
+- (BOOL) instantiateNibWithExternalNameTable: (NSDictionary *)externalNameTable
+                                    withZone: (NSZone *)zone
 {
-  return [_loader loadModelData: _nibData 
+  return [_loader loadModelData: _nibData
 		  externalNameTable: externalNameTable
 		  withZone: zone];
 }
@@ -158,60 +186,66 @@
 /**
  * This method instantiates the nib file.  The externalNameTable dictionary
  * accepts the NSNibOwner and NSNibTopLevelObjects entries described earlier.
- * It is recommended, for subclasses whose purpose is to change the behaviour 
+ * It is recommended, for subclasses whose purpose is to change the behaviour
  * of nib loading, to override this method.
  */
-- (BOOL)instantiateNibWithExternalNameTable: (NSDictionary *)externalNameTable
+- (BOOL) instantiateNibWithExternalNameTable: (NSDictionary *)externalNameTable
 {
   return [self instantiateNibWithExternalNameTable: externalNameTable
-	       withZone: NSDefaultMallocZone()];
+                                          withZone: NSDefaultMallocZone()];
 }
 
 /**
- * This method instantiates the nib file.  It utilizes the 
- * instantiateNibWithExternalNameTable: method to, in a convenient way, 
+ * This method instantiates the nib file.  It utilizes the
+ * instantiateNibWithExternalNameTable: method to, in a convenient way,
  * allow the user to specify both keys accepted by the
  * nib loading process.
  */
-- (BOOL)instantiateNibWithOwner: (id)owner topLevelObjects: (NSArray **)topLevelObjects
+- (BOOL) instantiateNibWithOwner: (id)owner
+                 topLevelObjects: (NSArray **)topLevelObjects
 {
   NSMutableDictionary *externalNameTable = [NSMutableDictionary dictionary];
 
   // add the necessary things to the table...
   [externalNameTable setObject: owner forKey: NSNibOwner];
 
-  if (topLevelObjects != 0)
+  if (topLevelObjects != NULL)
     {
       *topLevelObjects = [NSMutableArray array];
-      [externalNameTable setObject: *topLevelObjects forKey: NSNibTopLevelObjects];
+      [externalNameTable setObject: *topLevelObjects
+                            forKey: NSNibTopLevelObjects];
     }
 
-  return [self instantiateNibWithExternalNameTable: externalNameTable]; 
+  return [self instantiateNibWithExternalNameTable: externalNameTable];
+}
+
+- (BOOL) instantiateWithOwner: (id)owner
+              topLevelObjects: (NSArray **)topLevelObjects
+{
+  return [self instantiateNibWithOwner: owner
+                       topLevelObjects: topLevelObjects];
 }
 
 - (id) initWithCoder: (NSCoder *)coder
 {
   if ((self = [super init]) != nil)
     {
-      //
-      // NOTE: This is okay, since the only encodings which will ever be built into
-      //       the gui library are nib and gorm.  GModel only supports certain
-      //       objects and is going to be deprecated in the future.  There just so
-      //       happens to be a one to one correspondence here.
-      //
       if ([coder allowsKeyedCoding])
 	{
-	  // TODO_NIB: Need to verify this key...
+          // TODO_NIB: Need to verify this key...
 	  ASSIGN(_nibData, [coder decodeObjectForKey: @"NSData"]);
-	  ASSIGN(_loader, [GSModelLoaderFactory modelLoaderForFileType: @"nib"]);
 	}
       else
 	{
 	  // this is sort of a kludge...
 	  [coder decodeValueOfObjCType: @encode(id)
-		 at: &_nibData];
-	  ASSIGN(_loader, [GSModelLoaderFactory modelLoaderForFileType: @"gorm"]);
+                                    at: &_nibData];
 	}
+
+      if (_nibData != nil)
+        {
+          ASSIGN(_loader, [GSModelLoaderFactory modelLoaderForData: _nibData]);
+        }
     }
   return self;
 }
@@ -221,8 +255,8 @@
   if ([coder allowsKeyedCoding])
     {
       // TODO_NIB: Need to verify this key...
-      [coder encodeObject: _nibData 
-	     forKey: @"NSData"];      
+      [coder encodeObject: _nibData
+	     forKey: @"NSData"];
     }
   else
     {
@@ -236,7 +270,6 @@
   RELEASE(_nibData);
   RELEASE(_loader);
   TEST_RELEASE(_bundle);
-  TEST_RELEASE(_url);
   [super dealloc];
 }
 

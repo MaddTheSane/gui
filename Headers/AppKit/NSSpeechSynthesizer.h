@@ -10,16 +10,16 @@
    This file is part of the GNUstep GUI Library.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
 
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
+   Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Library General Public
+   You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
    If not, write to the Free Software Foundation,
    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -29,6 +29,7 @@
 #define _GNUstep_H_NSSpeechSynthesizer
 
 #import <Foundation/NSObject.h>
+#import <AppKit/AppKitDefines.h>
 
 // NSSpeechBoundary enumerated type...
 typedef enum 
@@ -36,7 +37,7 @@ typedef enum
     NSSpeechImmediateBoundary = 0,
     NSSpeechWordBoundary,
     NSSpeechSentenceBoundary
-  } 
+  }
 NSSpeechBoundary;
 
 // forward declarations...
@@ -63,6 +64,12 @@ extern NSString *NSSpeechModeText;
 extern NSString *NSSpeechModePhoneme;
 extern NSString *NSSpeechModeNormal;
 extern NSString *NSSpeechModeLiteral;
+
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_5, GS_API_LATEST)
+extern NSString *NSSpeechResetProperty;
+extern NSString *NSSpeechOutputToFileURLProperty;
+extern NSString *NSSpeechPitchBaseProperty;
+#endif
 
 // values for speech status...
 extern NSString *NSSpeechStatusOutputBusy;
@@ -94,6 +101,7 @@ extern NSString *NSSpeechDictionaryEntrySpelling;
 extern NSString *NSSpeechDictionaryEntryPhonemes;
 
 // class declaration...
+APPKIT_EXPORT_CLASS
 @interface NSSpeechSynthesizer : NSObject
 
 // init...
@@ -151,8 +159,13 @@ extern NSString *NSSpeechDictionaryEntryPhonemes;
 - (NSString *) phonemesFromText: (NSString *)text;
 @end
 
-// Speech synthesizer delegate informal protocol...
+@protocol NSSpeechSynthesizerDelegate <NSObject>
+#if GS_PROTOCOLS_HAVE_OPTIONAL
+@optional
+#else
+@end
 @interface NSObject (NSSpeechSynthesizerDelegate)
+#endif
 - (void)speechSynthesizer: (NSSpeechSynthesizer *)sender
  didEncounterErrorAtIndex: (NSUInteger)index 
                  ofString: (NSString *)string 
@@ -173,3 +186,4 @@ extern NSString *NSSpeechDictionaryEntryPhonemes;
 @end
 
 #endif // _GNUstep_H_NSSpeechSynthesizer
+

@@ -28,24 +28,30 @@
    If not, see <http://www.gnu.org/licenses/> or write to the 
    Free Software Foundation, 51 Franklin Street, Fifth Floor, 
    Boston, MA 02110-1301, USA.
-*/ 
+*/
 
 #import "config.h"
 
+#if defined(HAVE_UNISTD_H)
 #include <unistd.h>
+#endif
+
 #include <sys/types.h>
-#if	defined(HAVE_GETMNTINFO)
+
+#if defined(HAVE_GETMNTINFO)
 #include <sys/param.h>
 #include <sys/mount.h>
-#elif	defined(HAVE_GETMNTENT) && defined (MNT_MEMB)
-#if	defined(HAVE_MNTENT_H)
-#include <mntent.h>
-#elif defined(HAVE_SYS_MNTENT_H)
-#include <sys/mntent.h>
-#else
-#undef	HAVE_GETMNTENT
 #endif
-#endif
+
+#if defined(HAVE_GETMNTENT) && defined (MNT_MEMB)
+  #if defined(HAVE_MNTENT_H)
+  #include <mntent.h>
+  #elif defined(HAVE_SYS_MNTENT_H)
+  #include <sys/mntent.h>
+  #else
+  #undef HAVE_GETMNTENT
+  #endif
+#endif /* HAVE_GETMNTENT */
 
 #if defined (HAVE_SYS_STATVFS_H)
 #include <sys/statvfs.h>
@@ -56,6 +62,20 @@
   #include <linux/magic.h>
   #endif
 #endif
+
+/* FIXME Solaris uses /etc/mnttab instead of /etc/mtab, but defines
+ * MNTTAB to that path.
+ * FIXME We won't get here on Solaris at all because it defines the
+ * mntent struct in sys/mnttab.h instead of sys/mntent.h.
+ */
+# ifdef _PATH_MOUNTED
+#  define MOUNTED_PATH _PATH_MOUNTED
+# elif defined(MOUNTED)
+#  define MOUNTED_PATH MOUNTED
+# else
+#  define MNTTAB "/etc/mtab"
+#  warning "Mounted path file for you OS guessed to /etc/mtab";
+# endif
 
 #import <Foundation/NSBundle.h>
 #import <Foundation/NSData.h>
@@ -85,15 +105,9 @@
 #import "AppKit/NSPanel.h"
 #import "AppKit/NSWindow.h"
 #import "AppKit/NSScreen.h"
-#import "GNUstepGUI/GSServicesManager.h"
 #import "GNUstepGUI/GSDisplayServer.h"
+#import "GNUstepGUI/GSServicesManager.h"
 #import "GSGuiPrivate.h"
-
-/* Informal protocol for method to ask an app to open a URL.
- */
-@interface NSObject (OpenURL)
-- (BOOL) application: (NSApplication*)a openURL: (NSURL*)u;
-@end
 
 /* Private method to check that a process exists.
  */
@@ -111,6 +125,7 @@ static NSImage	*multipleFiles = nil;
 static NSImage	*unknownApplication = nil;
 static NSImage	*unknownTool = nil;
 
+static NSLock   *classLock = nil;
 static NSLock   *mlock = nil;
 
 static NSString	*GSWorkspaceNotification = @"GSWorkspaceNotification";
@@ -533,7 +548,7 @@ static id GSLaunched(NSNotification *notification, BOOL active)
  * method passing it the file name.
  * </p>
  * <p>This command line argument mechanism provides a way for non-gnustep
- * applications to be used to open files simply by provideing a wrapper
+ * applications to be used to open files simply by providing a wrapper
  * for them containing the appropriate Info-gnustep.plist.<br />
  * For instance - you could set up xv.app to contain a shellscript 'xv'
  * that would start the real xv binary passing it a file to open if the
@@ -554,9 +569,32 @@ static id GSLaunched(NSNotification *notification, BOOL active)
  *       NSIcon = "xbm.tiff";
  *       NSUnixExtensions = (xbm);
  *     }
- *);
+ *   );
  * }
  * </example>
+ * <p>A similar mechanism exists for opening URLs.  In this case URL schema
+ * information is provided in the CFBundleURLTypes entry of Info-gnustep.plist
+ * and when launching an application to open one or more URLs the application
+ * receives a '-GSOpenURL' argument telling it which URL to open.<br />
+ * For a GNUstep application, the application will recognize this and invoke
+ * the -application:openURL: method passing it the URL argument.<br />
+ * The Info-gnustep.plist file could look like this:
+ * </p>
+ * <example>
+ * 
+ * {
+ *   NSExecutable = "firefox";
+ *   NSIcon = "firefox.png";
+ *   CFBundleURLTypes = (
+ *     {
+ *       CFBundleTypeRole = Viewer;
+ *       CFBundleURLSchemes = (
+ *         http,
+ *         https
+ *       );
+ *     }
+ *   );
+ * }
  */
 @implementation	NSWorkspace
 
@@ -578,26 +616,22 @@ static NSDictionary		*urlPreferences = nil;
 {
   if (self == [NSWorkspace class])
     {
-      static BOOL	beenHere = NO;
-      NSFileManager	*mgr = [NSFileManager defaultManager];
-      NSString		*service;
-      NSData		*data;
-      NSDictionary	*dict;
-
       [self setVersion: 1];
-
-      [gnustep_global_lock lock];
-      if (beenHere == YES)
+      if (classLock)
 	{
-	  [gnustep_global_lock unlock];
 	  return;
 	}
-
-      beenHere = YES;
+      classLock = [NSLock new];
       mlock = [NSLock new];
 
       NS_DURING
 	{
+	  NSFileManager	*mgr = [NSFileManager defaultManager];
+	  NSString	*service;
+	  NSData	*data;
+	  NSDictionary	*dict;
+
+
 	  service = [[NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, 
 	    NSUserDomainMask, YES) objectAtIndex: 0]
 	    stringByAppendingPathComponent: @"Services"];
@@ -655,12 +689,9 @@ static NSDictionary		*urlPreferences = nil;
 	}
       NS_HANDLER
 	{
-	  [gnustep_global_lock unlock];
 	  [localException raise];
 	}
       NS_ENDHANDLER
-
-      [gnustep_global_lock unlock];
     }
 }
 
@@ -678,14 +709,14 @@ static NSDictionary		*urlPreferences = nil;
 {
   if (sharedWorkspace == nil)
     {
-      [gnustep_global_lock lock];
+      [classLock lock];
       if (sharedWorkspace == nil)
 	{
 	  sharedWorkspace =
 		(NSWorkspace*)NSAllocateObject(self, 0, NSDefaultMallocZone());
 	  [sharedWorkspace init];
 	}
-      [gnustep_global_lock unlock];
+      [classLock unlock];
     }
   return sharedWorkspace;
 }
@@ -780,10 +811,10 @@ static NSDictionary		*urlPreferences = nil;
     }
 
   if (sysDir != nil)
-    [folderPathIconDict setObject: @"GSFolder" forKey: sysDir];
+    [folderPathIconDict setObject: @"GSFolder" forKey: [sysDir stringByResolvingSymlinksInPath]];
 
   [folderPathIconDict setObject: @"HomeDirectory"
-    forKey: NSHomeDirectory()];
+			 forKey: [NSHomeDirectory() stringByResolvingSymlinksInPath]];
 
   /* it would be nice to use different root icons... */
   [folderPathIconDict setObject: @"Root_PC" forKey: NSOpenStepRootDirectory()];
@@ -791,42 +822,42 @@ static NSDictionary		*urlPreferences = nil;
   for (i = 0; i < [libraryDirs count]; i++)
     {
       [folderPathIconDict setObject: @"LibraryFolder"
-	forKey: [libraryDirs objectAtIndex: i]];
+	forKey: [[libraryDirs objectAtIndex: i] stringByResolvingSymlinksInPath]];
     }
   for (i = 0; i < [appDirs count]; i++)
     {
       [folderPathIconDict setObject: @"ApplicationFolder"
-	forKey: [appDirs objectAtIndex: i]];
+	forKey: [[appDirs objectAtIndex: i] stringByResolvingSymlinksInPath]];
     }
   for (i = 0; i < [documentDir count]; i++)
     {
       [folderPathIconDict setObject: @"DocsFolder"
-	forKey: [documentDir objectAtIndex: i]];
+	forKey: [[documentDir objectAtIndex: i] stringByResolvingSymlinksInPath]];
     }
   for (i = 0; i < [downloadDir count]; i++)
     {
       [folderPathIconDict setObject: @"DownloadFolder"
-	forKey: [downloadDir objectAtIndex: i]];
+	forKey: [[downloadDir objectAtIndex: i] stringByResolvingSymlinksInPath]];
     }
   for (i = 0; i < [desktopDir count]; i++)
     {
       [folderPathIconDict setObject: @"Desktop"
-	forKey: [desktopDir objectAtIndex: i]];
+	forKey: [[desktopDir objectAtIndex: i] stringByResolvingSymlinksInPath]];
     }
   for (i = 0; i < [imgDir count]; i++)
     {
       [folderPathIconDict setObject: @"ImageFolder"
-	forKey: [imgDir objectAtIndex: i]];
+	forKey: [[imgDir objectAtIndex: i] stringByResolvingSymlinksInPath]];
     }
   for (i = 0; i < [musicDir count]; i++)
     {
       [folderPathIconDict setObject: @"MusicFolder"
-	forKey: [musicDir objectAtIndex: i]];
+	forKey: [[musicDir objectAtIndex: i] stringByResolvingSymlinksInPath]];
     }
   for (i = 0; i < [videoDir count]; i++)
     {
       [folderPathIconDict setObject: @"VideoFolder"
-	forKey: [videoDir objectAtIndex: i]];
+	forKey: [[videoDir objectAtIndex: i] stringByResolvingSymlinksInPath]];
     }
   folderIconCache = [[NSMutableDictionary alloc] init];
 
@@ -838,18 +869,21 @@ static NSDictionary		*urlPreferences = nil;
  */
 - (BOOL) _openUnknown: (NSString*)fullPath
 {
-  NSString *tool = [[NSUserDefaults standardUserDefaults] objectForKey: @"GSUnknownFileTool"];
-  NSString *launchPath;
+  NSUserDefaults	*defs = [NSUserDefaults standardUserDefaults];
+  NSString 		*tool = [defs objectForKey: @"GSUnknownFileTool"];
+  NSString 		*launchPath;
 
   if ((tool == nil) || (launchPath = [NSTask launchPathForTool: tool]) == nil)
     {
 #ifdef __MINGW32__
       // Maybe we should rather use "Explorer.exe /e, " as the tool name
-      unichar *buffer = (unichar *)calloc(1, ([fullPath length] + 1) * sizeof(unichar));
+      unichar *buffer;
+
+      buffer = (unichar *)calloc(1, ([fullPath length] + 1) * sizeof(unichar));
       [fullPath getCharacters: buffer range: NSMakeRange(0, [fullPath length])];
       buffer[[fullPath length]] = 0;
-      BOOL success = ((int)ShellExecuteW(GetDesktopWindow(), L"open", buffer, NULL, 
-                                    NULL, SW_SHOWNORMAL) > 32);
+      BOOL success = ((int)ShellExecuteW(GetDesktopWindow(), L"open",
+	buffer, NULL, NULL, SW_SHOWNORMAL) > 32);
       free(buffer);
       return success;
 #else
@@ -860,8 +894,9 @@ static NSDictionary		*urlPreferences = nil;
 
   if (launchPath)
     {
-      NSTask * task = [NSTask launchedTaskWithLaunchPath: launchPath
-                                               arguments: [NSArray arrayWithObject: fullPath]];
+      NSArray	*args = [NSArray arrayWithObject: fullPath];
+      NSTask 	*task = [NSTask launchedTaskWithLaunchPath: launchPath
+					         arguments: args];
       if (task != nil)
         {
           [task waitUntilExit];
@@ -1054,7 +1089,7 @@ static NSDictionary		*urlPreferences = nil;
 
 	  /* Now try to get the application to open the URL.
 	   */
-	  app = GSContactApplication(appName, nil, nil);
+	  app = [self _connectApplication: appName];
 	  if (app != nil)
 	    {
 	      NS_DURING
@@ -1063,30 +1098,57 @@ static NSDictionary		*urlPreferences = nil;
 		}
 	      NS_HANDLER
 		{
-		  NSWarnLog(@"Failed to contact '%@' to open file", appName);
+		  NSWarnLog(@"Failed to get '%@' to open file", appName);
 		  return NO;
 		}
 	      NS_ENDHANDLER
 	      [NSApp deactivate];
 	      return YES;
 	    }
+	  else
+	    {
+	      NSArray *args;
+
+	      args = [NSArray arrayWithObjects:
+		@"-GSOpenURL", [url absoluteString], nil];
+	      if ([self _launchApplication: appName arguments: args])
+		{
+		  [NSApp deactivate];
+		  return YES;
+		}
+	      NSWarnLog(@"Failed to launch '%@' to open file", appName);
+	      return NO;
+	    }
 	}
       /* No application found to open the URL.
-       * Try any OpenURL service available.
+       * Try any Open URL service available.
        */
       pb = [NSPasteboard pasteboardWithUniqueName];
-      [pb declareTypes: [NSArray arrayWithObject: NSURLPboardType]
-                         owner: nil];
-     [url writeToPasteboard: pb];
-     if (NSPerformService(@"OpenURL", pb))
-       {
-         return YES;
-       }
-     else
-       {
-         return [self _openUnknown: [url absoluteString]];
-       }
+      [pb declareTypes:
+	[NSArray arrayWithObjects: NSURLPboardType, NSStringPboardType, nil]
+		 owner: nil];
+      [url writeToPasteboard: pb];
+      if ([[GSServicesManager manager] performService: @"Open URL"
+				       withPasteboard: pb
+					 alertOnError: NO])
+        {
+          [NSApp deactivate];
+          return YES;
+        }
+      else
+        {
+	  NSRunAlertPanel(nil,
+	    @"Unable to use Application or Service to open URL",
+	    @"Continue", nil, nil);
+
+          if ([self _openUnknown: [url absoluteString]])
+	    {
+	      [NSApp deactivate];
+	      return YES;
+	    }
+        }
     }
+  return NO;
 }
 
 /*
@@ -1221,15 +1283,59 @@ inFileViewerRootedAtPath: (NSString*)rootFullpath
 			     type: (NSString **)fileSystemType
 {
   NSArray *removables;
+  NSString  *fsName;
 
   /* since we might not be able to get information about removable volumes
-     we use the information from the preferences which can be set in Systempreferences
+     we use the information from the preferences which can be set in SystemPreferences
    */
   removables = [[[NSUserDefaults standardUserDefaults] persistentDomainForName: NSGlobalDomain] objectForKey: @"GSRemovableMediaPaths"];
-  
+
   *removableFlag = NO;
   if ([removables containsObject: fullPath])
     *removableFlag = YES;
+
+  fsName = nil;
+#if defined(HAVE_GETMNTENT) && defined (MNT_MEMB)
+  // if this is called from mountedLocalVolumePaths, the getmntent is searched again for each item
+  FILE		*fptr = setmntent(MOUNTED_PATH, "r");
+  struct mntent	*me;
+
+  while ((me = getmntent(fptr)) != 0)
+  {
+    if (strcmp(me->MNT_MEMB, [fullPath fileSystemRepresentation]) == 0)
+      {
+	fsName = [NSString stringWithCString:me->MNT_FSNAME];
+      }
+  }
+  endmntent(fptr);
+#endif /* HAVE_GETMINTENT */
+  if (fsName && [fsName hasPrefix:@"/dev"])
+    {
+      NSString *devName;
+      NSString *devInfoPath;
+      BOOL r;
+      NSString *removableString;
+
+      r = NO;
+      devName = [fsName lastPathComponent];
+      // This is a very crude way of removing the partition number
+      if ([devName length] > 3)
+	devName = [devName substringToIndex: 3];
+
+      devInfoPath = [@"/sys/block" stringByAppendingPathComponent:devName];
+      devInfoPath = [devInfoPath stringByAppendingPathComponent:@"removable"];
+
+      removableString = [[NSString alloc] initWithContentsOfFile:devInfoPath];
+
+      if ([removableString hasPrefix:@"1"])
+	r = YES;
+      [removableString release];
+
+      // we go in OR against the informatoin derived from declared removables
+      // so we enrich, but don't mark removables as not
+      *removableFlag |= r;
+    }
+
   
 #if defined (HAVE_SYS_STATVFS_H) || defined (HAVE_SYS_VFS_H)
   /* We use statvfs() if available to get information but statfs()
@@ -1247,7 +1353,6 @@ inFileViewerRootedAtPath: (NSString*)rootFullpath
      non-standard f_basetype field, which provides the name of the
      underlying file system type.
   */
-  uid_t uid;
   BOOL isRootFS;
   BOOL hasOwnership;
 
@@ -1262,7 +1367,6 @@ inFileViewerRootedAtPath: (NSString*)rootFullpath
   if (statfs([fullPath fileSystemRepresentation], &m))
     return NO;  
 #endif
-  uid = geteuid();
 
   *writableFlag = 1;
 #if  defined(HAVE_STRUCT_STATVFS_F_FLAG)
@@ -1281,9 +1385,11 @@ inFileViewerRootedAtPath: (NSString*)rootFullpath
 
   hasOwnership = NO;
 #if (defined(USING_STATFS) && defined(HAVE_STRUCT_STATFS_F_OWNER)) || (defined(USING_STATVFS) &&  defined(HAVE_STRUCT_STATVFS_F_OWNER))
+  uid_t uid = geteuid();
   if (uid == 0 || uid == m.f_owner)
     hasOwnership = YES;
 #elif (defined(USING_STATVFS) && !defined(USING_STATFS) && defined (HAVE_STATFS) && defined(HAVE_STRUCT_STATFS_F_OWNER))
+  uid_t uid = geteuid();
   // FreeBSD only?
   struct statfs m2;
   statfs([fullPath fileSystemRepresentation], &m2);
@@ -1456,13 +1562,13 @@ inFileViewerRootedAtPath: (NSString*)rootFullpath
   if ([fileType isEqual: NSFileTypeDirectory] == YES)
     {
       NSString *iconPath = nil;
-      
+
       if ([pathExtension isEqualToString: @"app"]
 	|| [pathExtension isEqualToString: @"debug"]
 	|| [pathExtension isEqualToString: @"profile"])
 	{
 	  image = [self appIconForApp: fullPath];
-	  
+
 	  if (image == nil)
 	    {
 	      /*
@@ -1682,6 +1788,13 @@ inFileViewerRootedAtPath: (NSString*)rootFullpath
     {
       path = [[NSTask launchPathForTool: @"make_services"] retain];
     }
+
+  if (path == nil)
+    {
+      [NSException raise: NSInternalInconsistencyException
+	           format: @"Unable to find the make_services tool.\n"];
+    }
+
   task = [NSTask launchedTaskWithLaunchPath: path
 				  arguments: nil];
   if (task != nil)
@@ -2073,13 +2186,30 @@ launchIdentifiers: (NSArray **)identifiers
 	  [names addObject: name];
 	}
     }
-
+  NSDebugLog(@"mountedRemovableMedia returning names: %@", names);
   return names;
 }
 
 - (NSArray*) mountedLocalVolumePaths
 {
   NSMutableArray	*names;
+  NSArray	        *reservedMountNames;
+
+  // get reserved names....
+  reservedMountNames = [[NSUserDefaults standardUserDefaults] objectForKey: @"GSReservedMountNames"];
+  if (reservedMountNames == nil)
+    {
+      reservedMountNames = [NSArray arrayWithObjects:
+				      @"proc",@"devpts",
+				    @"shm",@"usbdevfs",
+				    @"devtmpfs", @"devpts",@"sysfs",
+				    @"tmpfs",@"procbususb",
+				    @"udev", @"pstore",
+				    @"cgroup", nil];
+      [[NSUserDefaults standardUserDefaults] setObject: reservedMountNames 
+						forKey: @"GSReservedMountNames"];
+    }
+
 #if	defined(__MINGW32__)
   NSFileManager		*mgr = [NSFileManager defaultManager];
   unsigned		max = BUFSIZ;
@@ -2140,19 +2270,6 @@ launchIdentifiers: (NSArray **)identifiers
         }
     }
 #elif	defined(HAVE_GETMNTENT) && defined (MNT_MEMB)
-  /* FIXME Solaris uses /etc/mnttab instead of /etc/mtab, but defines
-   * MNTTAB to that path.
-   * FIXME We won't get here on Solaris at all because it defines the
-   * mntent struct in sys/mnttab.h instead of sys/mntent.h.
-   */
-# ifdef _PATH_MOUNTED
-#  define MOUNTED_PATH _PATH_MOUNTED
-# elif defined(MOUNTED)
-#  define MOUNTED_PATH MOUNTED
-# else
-#  define MNTTAB "/etc/mtab"
-#  warning "Mounted path file for you OS guessed to /etc/mtab";
-# endif
 
   NSFileManager	*mgr = [NSFileManager defaultManager];
   FILE		*fptr = setmntent(MOUNTED_PATH, "r");
@@ -2162,10 +2279,15 @@ launchIdentifiers: (NSArray **)identifiers
   while ((m = getmntent(fptr)) != 0)
     {
       NSString	*path;
+      NSString  *type;
 
       path = [mgr stringWithFileSystemRepresentation: m->MNT_MEMB
 					      length: strlen(m->MNT_MEMB)];
-      [names addObject: path];
+      type = [NSString stringWithCString:m->mnt_type];
+      if ([reservedMountNames containsObject: type] == NO)
+	{
+	  [names addObject: path];
+	}
     }
   endmntent(fptr);
 #else
@@ -2173,7 +2295,7 @@ launchIdentifiers: (NSArray **)identifiers
      defined in preferences GSReservedMountNames (SystemPreferences) */
   NSString	*mtabPath;
   NSString	*mtab;
-  NSArray	*mounts, *reservedMountNames;
+  NSArray	*mounts;
   unsigned int	i;
 
   // get mount table...
@@ -2181,20 +2303,6 @@ launchIdentifiers: (NSArray **)identifiers
   if (mtabPath == nil)
     {
       mtabPath = @"/etc/mtab";
-    }
-  
-  // get reserved names....
-  reservedMountNames = [[NSUserDefaults standardUserDefaults] objectForKey: @"GSReservedMountNames"];
-  if (reservedMountNames == nil)
-    {
-      reservedMountNames = [NSArray arrayWithObjects: 
-				      @"proc",@"devpts",
-				    @"shm",@"usbdevfs",
-				    @"devpts",@"sysfs",
-				    @"tmpfs",@"procbususb",
-				    @"udev",nil];
-      [[NSUserDefaults standardUserDefaults] setObject: reservedMountNames 
-					     forKey: @"GSReservedMountNames"];
     }
 
   mtab = [NSString stringWithContentsOfFile: mtabPath];
@@ -2212,7 +2320,6 @@ launchIdentifiers: (NSArray **)identifiers
           if ([parts count] >= 2) 
             {          
               NSString	*type = [parts objectAtIndex: 2];
-              
               if ([reservedMountNames containsObject: type] == NO)
               {
 	         [names addObject: [parts objectAtIndex: 1]];
@@ -2221,7 +2328,7 @@ launchIdentifiers: (NSArray **)identifiers
         }
     }
 #endif
-
+  NSDebugLog(@"mountedLocalVolumePaths returning names: %@", names);
   return names;
 }
 

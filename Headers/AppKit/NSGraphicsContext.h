@@ -30,7 +30,7 @@
 
 #ifndef _NSGraphicsContext_h_INCLUDE
 #define _NSGraphicsContext_h_INCLUDE
-#import <GNUstepBase/GSVersionMacros.h>
+#import <AppKit/AppKitDefines.h>
 
 #import <Foundation/NSObject.h>
 #import <Foundation/NSMapTable.h>
@@ -49,6 +49,9 @@
 @class NSSet;
 @class NSBitmapImageRep;
 @class NSGradient;
+@class NSShadow;
+
+typedef struct CGContext *CGContextRef;
 
 /*
  * Backing Store Types
@@ -166,6 +169,7 @@ typedef enum _GSColorSpace
   GSICC
 } GSColorSpace;
 
+APPKIT_EXPORT_CLASS
 @interface NSGraphicsContext : NSObject
 {
   /* Make the one public instance variable first in the object so that, if we
@@ -185,6 +189,7 @@ typedef enum _GSColorSpace
   void *_graphicsPort;
   BOOL _isFlipped;
   NSCompositingOperation _compositingOperation;
+  NSShadow *_shadow;
 }
 
 + (BOOL) currentContextDrawingToScreen;
@@ -202,6 +207,13 @@ typedef enum _GSColorSpace
                                                 flipped: (BOOL)flag;
 #endif
 
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_10, GS_API_LATEST)
+- (CGContextRef) CGContext;
++ (NSGraphicsContext *) graphicsContextWithCGContext: (CGContextRef)ctx
+                                             flipped: (BOOL)flipped;
+#endif
+
+- (const gsMethodTable *) methods;
 - (NSDictionary *) attributes;
 - (void *) graphicsPort;
 
@@ -240,6 +252,8 @@ APPKIT_EXPORT NSGraphicsContext	*GSCurrentContext(void);
 + (void) setDefaultContextClass: (Class)defaultContextClass;
 
 - (id) initWithContextInfo: (NSDictionary*)info;
+- (id) initWithGraphicsPort: (void *)port 
+                    flipped: (BOOL)flag;
 
 /*
  * Focus management methods - lock and unlock should only be used by NSView
@@ -256,6 +270,11 @@ APPKIT_EXPORT NSGraphicsContext	*GSCurrentContext(void);
 
 /* Private backend methods */
 + (void) handleExposeRect: (NSRect)rect forDriver: (void *)driver;
+
+/* Private method for handling shadows */
+- (void) setShadow: (NSShadow *)shadow;
+- (NSShadow *) shadow;
+
 @end
 #endif
 
@@ -530,7 +549,6 @@ transform between current user space and image space for this image.</desc>
             fromPoint: (NSPoint)startPoint
               toPoint: (NSPoint)endPoint
               options: (NSUInteger)options;
-
 @end
 
 /* NSGraphicContext constants */

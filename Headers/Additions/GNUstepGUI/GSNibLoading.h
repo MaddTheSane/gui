@@ -652,9 +652,15 @@ typedef struct _GSWindowTemplateFlags
   unsigned int autoPositionMask:6;
   unsigned int savePosition:1;
   unsigned int style:2;
-  unsigned int _unused:16; // currently not used, contains Cocoa specific info
+  unsigned int _unused2:3;
+  unsigned int isNotShadowed:1;
+  unsigned int autorecalculatesKeyViewLoop:1;
+  unsigned int _unused:11; // currently not used, contains Cocoa specific info
 #else
-  unsigned int _unused:16; // currently not used, contains Cocoa specific info
+  unsigned int _unused:11; // currently not used, contains Cocoa specific info
+  unsigned int autorecalculatesKeyViewLoop:1;
+  unsigned int isNotShadowed:1;
+  unsigned int _unused2:3;
   unsigned int style:2;
   unsigned int savePosition:1;
   unsigned int autoPositionMask:6;
@@ -669,6 +675,7 @@ typedef struct _GSWindowTemplateFlags
 } GSWindowTemplateFlags;
 
 // help connector class...
+APPKIT_EXPORT_CLASS
 @interface NSIBHelpConnector : NSNibConnector
 {
   id _marker;
@@ -682,6 +689,7 @@ typedef struct _GSWindowTemplateFlags
 /**
  * Button image source class.
  */
+APPKIT_EXPORT_CLASS
 @interface NSButtonImageSource : NSObject <NSCoding>
 {
   NSString *imageName;
@@ -696,6 +704,7 @@ typedef struct _GSWindowTemplateFlags
  * when it's unarchived and second, it holds certain attributes (but doesn't set them
  * on the window, when the window is being edited in the application builder.
  */
+APPKIT_EXPORT_CLASS
 @interface NSWindowTemplate : NSObject <OSXNibTemplate, NSCoding, GSNibLoading>
 {
   @public
@@ -713,6 +722,7 @@ typedef struct _GSWindowTemplateFlags
   GSWindowTemplateFlags _flags;
   NSString            *_autosaveName;
   Class               _baseWindowClass;
+  NSToolbar           *_toolbar;
 }
 - (id) initWithWindow: (NSWindow *)window
 	    className: (NSString *)windowClass
@@ -744,6 +754,7 @@ typedef struct _GSWindowTemplateFlags
 - (Class) baseWindowClass;
 @end
 
+APPKIT_EXPORT_CLASS
 @interface NSViewTemplate : NSView <OSXNibTemplate, NSCoding>
 {
   NSString            *_className;
@@ -753,16 +764,19 @@ typedef struct _GSWindowTemplateFlags
             className: (NSString *)name;
 @end
 
+APPKIT_EXPORT_CLASS
 @interface NSTextTemplate : NSViewTemplate
 {
 }
 @end
 
+APPKIT_EXPORT_CLASS
 @interface NSTextViewTemplate : NSViewTemplate
 {
 }
 @end
 
+APPKIT_EXPORT_CLASS
 @interface NSMenuTemplate : NSObject <OSXNibTemplate, NSCoding>
 {
   NSString            *_menuClass;
@@ -779,6 +793,7 @@ typedef struct _GSWindowTemplateFlags
 - (NSString *)className;
 @end
 
+APPKIT_EXPORT_CLASS
 @interface NSCustomObject : NSObject <NSCoding, GSNibLoading>
 {
   NSString *_className;
@@ -789,8 +804,11 @@ typedef struct _GSWindowTemplateFlags
 - (NSString *)className;
 - (void) setExtension: (NSString *)ext;
 - (NSString *)extension;
+- (void) setRealObject: (id)obj;
+- (id) realObject;
 @end
 
+APPKIT_EXPORT_CLASS
 @interface NSCustomView : NSView <GSNibLoading>
 {
   NSString *_className;
@@ -805,6 +823,7 @@ typedef struct _GSWindowTemplateFlags
 - (id)nibInstantiateWithCoder: (NSCoder *)coder;
 @end
 
+APPKIT_EXPORT_CLASS
 @interface NSCustomResource : NSObject <NSCoding>
 {
   NSString *_className;
@@ -816,6 +835,7 @@ typedef struct _GSWindowTemplateFlags
 - (NSString *)resourceName;
 @end
 
+APPKIT_EXPORT_CLASS
 @interface NSClassSwapper : NSObject <NSCoding>
 {
   NSString *_className;
@@ -835,6 +855,7 @@ typedef struct _GSWindowTemplateFlags
 - (NSString *)originalClassName;
 @end
 
+APPKIT_EXPORT_CLASS
 @interface NSIBObjectData : NSObject <NSCoding, GSInstantiator, GSNibContainer>
 {
   id              _root;
@@ -869,9 +890,11 @@ typedef struct _GSWindowTemplateFlags
 @end
 
 // class needed for nib encoding/decoding by the progress bar...
+APPKIT_EXPORT_CLASS
 @interface NSPSMatrix : NSObject
 @end
 
+APPKIT_EXPORT_CLASS
 @interface NSNibAXAttributeConnector : NSObject <NSCoding>
 {
   NSString *_attributeType;
@@ -899,6 +922,7 @@ typedef struct _GSWindowTemplateFlags
 - (void) establishConnection;
 @end
 
+APPKIT_EXPORT_CLASS
 @interface NSNibAXRelationshipConnector : NSNibConnector
 @end
 
@@ -918,6 +942,7 @@ typedef struct _GSWindowTemplateFlags
 - (void) setOptions: (NSDictionary *)options;
 @end
 
+APPKIT_EXPORT_CLASS
 @interface NSIBUserDefinedRuntimeAttributesConnector : NSObject <NSCoding>
 {
   id _object;

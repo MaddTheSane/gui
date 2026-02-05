@@ -27,6 +27,7 @@ NSHighlightedRadioButton = GSRadioSelected;
 GNUstepMenuImage = GSApplicationMenuIcon;
 AppleMenuImage = GSApplicationMenuIcon;
 common_3DArrowRight = GSMenuArrow;
+common_3DArrowRightH = NSHighlightedMenuArrow;
 NSMenuArrow = GSMenuArrow;
 common_2DCheckMark = GSMenuSelected;
 NSMenuCheckmark = GSMenuSelected;
@@ -36,12 +37,6 @@ NSMenuMixedState = GSMenuMixed;
 common_ComboBoxEllipsis = GSComboArrow;
 NSComboArrow = GSComboArrow;
 
-common_ClosedHandCursor = GSClosedHandCursor;
-common_OpenHandCursor = GSOpenHandCursor;
-common_copyCursor = GSDragCopyCursor;
-common_linkCursor = GSDragLinkCursor;
-common_noCursor = GSOperationNotAllowedCursor;
-
 /* Toolbar images */
 
 common_ToolbarCustomizeToolbarItem = NSToolbarCustomizeToolbarItemImage;
@@ -50,7 +45,8 @@ common_ToolbarShowColorsItem = NSToolbarShowColors;
 common_ToolbarShowFontsItem = NSToolbarShowFonts;
 common_RecyclerEmpty = NSImageTrashEmpty;
 common_RecyclerFull = NSImageTrashFull;
- 
+common_MenuToolbarItem = NSMenuToolbarItem;
+
 /* Misc. */
 
 common_MultipleSelection = NSImageNameMultipleDocuments;

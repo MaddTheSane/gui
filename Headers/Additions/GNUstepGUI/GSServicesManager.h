@@ -4,7 +4,7 @@
    Copyright (C) 1998 Free Software Foundation, Inc.
 
    Author:  Richard Frith-Macdonald <richard@brainstorm.co.uk>
-   Date: Novemeber 1998
+   Date: November 1998
   
    This file is part of the GNUstep GUI Library.
 
@@ -42,9 +42,12 @@
 @class	NSMutableArray;
 @class	NSMutableDictionary;
 @class	NSMutableSet;
+@class	NSPasteboard;
 @class	NSString;
 @class	NSTimer;
+@class	NSURL;
 
+APPKIT_EXPORT_CLASS
 @interface      GSServicesManager : NSObject
 {
   NSApplication         *_application;
@@ -72,6 +75,8 @@
 - (BOOL) application: (NSApplication*)theApp
 	openTempFile: (NSString*)file;
 - (BOOL) application: (NSApplication*)theApp
+             openURL: (NSURL*)aURL;
+- (BOOL) application: (NSApplication*)theApp
 	   printFile: (NSString*)file;
 - (void) doService: (NSMenuItem*)item;
 - (NSArray*) filters;
@@ -79,6 +84,9 @@
 - (NSString*) item2title: (id<NSMenuItem>)item;
 - (void) loadServices;
 - (NSDictionary*) menuServices;
+- (BOOL) performService: (NSString*)serviceItem
+         withPasteboard: (NSPasteboard*)pboard
+           alertOnError: (BOOL)showAlerts;
 - (NSString*) port;
 - (void) rebuildServices;
 - (void) rebuildServicesMenu;

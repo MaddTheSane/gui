@@ -9,7 +9,7 @@
    Date: 1996
 
    Fixes and updates made by
-   Author: Gregory John Casamento <borgheron@yahoo.com>
+   Author: Gregory John Casamento <greg.casamento@gmail.com>
    Date: 2000
    
    This file is part of the GNUstep GUI Library.
@@ -33,7 +33,7 @@
 
 #ifndef _GNUstep_H_NSScreen
 #define _GNUstep_H_NSScreen
-#import <GNUstepBase/GSVersionMacros.h>
+#import <AppKit/AppKitDefines.h>
 
 #import <Foundation/NSObject.h>
 #import <AppKit/NSGraphics.h>
@@ -41,6 +41,7 @@
 @class NSArray;
 @class NSDictionary;
 
+APPKIT_EXPORT_CLASS
 @interface NSScreen : NSObject
 {
 @private
@@ -74,7 +75,10 @@
 - (int) screenNumber;
 #endif
 #if OS_API_VERSION(MAC_OS_X_VERSION_10_4, GS_API_LATEST)
-- (float) userSpaceScaleFactor;
+- (CGFloat) userSpaceScaleFactor;
+#endif
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_7, GS_API_LATEST)
+- (CGFloat) backingScaleFactor;
 #endif
 
 @end

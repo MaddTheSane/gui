@@ -117,8 +117,6 @@ int main(int argc, char **argv)
 {
 	CREATE_AUTORELEASE_POOL(arp);
 	NSBezierPath *p=[[NSBezierPath alloc] init];
-	NSRect r;
-	float x;
 	int i;
 	const char *str;
 	int X=-1000;
@@ -702,6 +700,7 @@ int main(int argc, char **argv)
 		PAUSE
 	}
 
+	DESTROY(p);
 	DESTROY(arp);
 
 	return 0;

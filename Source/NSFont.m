@@ -80,6 +80,7 @@ globalFontMap.
 {
   return hash;
 }
+
 -(BOOL) isEqual: (id)other
 {
   GSFontMapKey *o;
@@ -99,11 +100,21 @@ globalFontMap.
     return NO;
   return YES;
 }
+
 -(void) dealloc
 {
   DESTROY(name);
   [super dealloc];
 }
+
+- (NSString *) description
+{
+  return [NSString stringWithFormat: @"%@ %d %d [%d %d %d %d %d %d]",
+                   name, screenFont, role,
+                   matrix[0], matrix[1], matrix[2],
+                   matrix[3], matrix[4], matrix[5]];
+}
+
 @end
 
 static GSFontMapKey *
@@ -166,10 +177,10 @@ keyForFont(NSString *name, const CGFloat *matrix,
     <item>NSFontSize                12 (System Font Size)</item>
     <item>NSLabelFontSize           (none)</item>
     <item>NSMenuFontSize            (none)</item>
-    <item>NSMiniFontSize            6</item>
+    <item>NSMiniFontSize            8</item>
     <item>NSMessageFontSize         (none)</item>
     <item>NSPaletteFontSize         (none)</item>
-    <item>NSSmallFontSize           9</item>
+    <item>NSSmallFontSize           10</item>
     <item>NSTitleBarFontSize        (none)</item>
     <item>NSToolTipsFontSize        (none)</item>
     <item>NSUserFixedPitchFontSize  (none)</item>
@@ -656,7 +667,7 @@ static void setNSFont(NSString *key, NSFont *font)
   
   if (fontSize == 0)
     {
-      fontSize = 9;
+      fontSize = 10;
     }
 
   return fontSize;
@@ -684,7 +695,7 @@ static void setNSFont(NSString *key, NSFont *font)
   
           if (fontSize == 0)
             {
-              fontSize = 6;
+              fontSize = 8;
             }
           
           return fontSize;

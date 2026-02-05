@@ -266,7 +266,7 @@ TypeInfoForHumanReadableName (NSArray *types, NSString *typeName)
   return sharedController;
 }
 
-/** </init>Initializes the document controller class. The first
+/** <init />Initializes the document controller class. The first
     instance of a document controller class that gets initialized
     becomes the shared instance.
  */
@@ -955,7 +955,9 @@ TypeInfoForHumanReadableName (NSArray *types, NSString *typeName)
 
 - (IBAction) openDocument: (id)sender
 {
+#if !__has_feature(blocks)
   NSError *err = nil;
+#endif
   NSEnumerator *urlEnum;
   NSURL *url;
 

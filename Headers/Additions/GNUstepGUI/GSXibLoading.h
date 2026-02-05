@@ -33,6 +33,7 @@
 
 #import <Foundation/NSObject.h>
 #import <Foundation/NSKeyedArchiver.h>
+#import "GNUstepGUI/GSXibKeyedUnarchiver.h"
 
 @class NSString, NSDictionary, NSArray, NSMutableDictionary, NSMutableArray;
 @class NSNibBindingConnector;
@@ -85,6 +86,7 @@
 
 @interface IBActionConnection: IBConnection
 {
+  NSString *trigger;
 }
 @end
 
@@ -157,8 +159,10 @@
 - (id) nibInstantiate;
 - (NSEnumerator *) connectionRecordEnumerator;
 - (NSEnumerator *) objectRecordEnumerator;
+- (NSDictionary *) customClassNames;
 @end
 
+APPKIT_EXPORT_CLASS
 @interface IBUserDefinedRuntimeAttributesPlaceholder : NSObject <NSCoding>
 {
   NSArray  *runtimeAttributes;
@@ -173,6 +177,7 @@
 
 @end
 
+APPKIT_EXPORT_CLASS
 @interface IBUserDefinedRuntimeAttribute : NSObject <NSCoding>
 {
   NSString *typeIdentifier;

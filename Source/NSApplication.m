@@ -62,6 +62,7 @@
 
 #import "AppKit/AppKitExceptions.h"
 #import "AppKit/NSAlert.h"
+#import "AppKit/NSAppearance.h"
 #import "AppKit/NSApplication.h"
 #import "AppKit/NSCell.h"
 #import "AppKit/NSCursor.h"
@@ -71,6 +72,7 @@
 #import "AppKit/NSImage.h"
 #import "AppKit/NSMenu.h"
 #import "AppKit/NSMenuItem.h"
+#import "AppKit/NSDockTile.h"
 #import "AppKit/NSNibLoading.h"
 #import "AppKit/NSPageLayout.h"
 #import "AppKit/NSPanel.h"
@@ -369,6 +371,7 @@ struct _NSModalSession {
  
 @interface NSApplication (Private)
 - (void) _appIconInit;
+- (void) _loadAppIconImage;
 - (NSDictionary*) _notificationUserInfo;
 - (void) _openDocument: (NSString*)name;
 - (id) _targetForAction: (SEL)aSelector
@@ -431,6 +434,11 @@ NSApplication	*NSApp = nil;
 - (BOOL) canBecomeKeyWindow
 {
   return NO;
+}
+
+- (BOOL) becomesKeyOnlyIfNeeded
+{
+  return YES;
 }
 
 - (BOOL) worksWhenModal
@@ -751,6 +759,8 @@ static NSSize scaledIconSizeForSize(NSSize imageSize)
  * events by overriding -sendEvent: .</p>
  */
 @implementation NSApplication
+
+static BOOL _isAutolaunchChecked = NO;
 
 /*
  * Class methods
@@ -1125,14 +1135,32 @@ static NSSize scaledIconSizeForSize(NSSize imageSize)
     {
       [_listener application: self openFiles: files];
     } 
-  else if ((filePath = [defs stringForKey: @"GSFilePath"]) != nil
-    || (filePath = [defs stringForKey: @"NSOpen"]) != nil)
+  else if ((filePath = [defs stringForKey: @"GSFilePath"]) != nil)
     {
       [_listener application: self openFile: filePath];
+    }
+  else if ((filePath = [defs stringForKey: @"GSOpenURL"]) != nil)
+    {
+      NSURL	*u = [NSURL URLWithString: filePath];
+
+      [_listener application: self openURL: u];
     }
   else if ((filePath = [defs stringForKey: @"GSTempPath"]) != nil)
     {
       [_listener application: self openTempFile: filePath];
+    }
+  else if ((filePath = [defs stringForKey: @"NSOpen"]) != nil)
+    {
+      NSURL	*u = [NSURL URLWithString: filePath];
+
+      if ([[u scheme] length] > 0)
+	{
+	  [_listener application: self openURL: u];
+	}
+      else
+	{
+          [_listener application: self openFile: filePath];
+	}
     }
   else if ((filePath = [defs stringForKey: @"NSPrint"]) != nil)
     {
@@ -1236,6 +1264,7 @@ static NSSize scaledIconSizeForSize(NSSize imageSize)
 
   TEST_RELEASE(_app_icon);
   TEST_RELEASE(_app_icon_window);
+  TEST_RELEASE(_dock_tile);
   TEST_RELEASE(_infoPanel);
 
   /* Destroy the default context */
@@ -1258,6 +1287,21 @@ static NSSize scaledIconSizeForSize(NSSize imageSize)
  */
 - (void) activateIgnoringOtherApps: (BOOL)flag
 {
+  if (_isAutolaunchChecked == NO)
+    {
+      NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+      NSString       *autolaunch = [defaults objectForKey: @"autolaunch"];
+
+      _isAutolaunchChecked = YES;
+      
+      /* Application was executed with an argument '-autolaunch YES'.
+         Do not activate application on first call. */
+      if (autolaunch && [autolaunch isEqualToString: @"YES"])
+        {
+          return;
+        }
+    }
+  
   // TODO: Currently the flag is ignored
   if (_app_is_active == NO)
     {
@@ -1651,7 +1695,7 @@ static NSSize scaledIconSizeForSize(NSSize imageSize)
           [theWindow center];
       [theWindow setLevel: NSModalPanelWindowLevel];
     }
-  [theWindow orderFrontRegardless];
+  
   if ([self isActive] == YES)
     {
       if ([theWindow canBecomeKeyWindow] == YES)
@@ -1663,6 +1707,7 @@ static NSSize scaledIconSizeForSize(NSSize imageSize)
 	  [theWindow makeMainWindow];
 	}
     }
+  [theWindow orderFrontRegardless];
 
   return theSession;
 }
@@ -2032,6 +2077,7 @@ See -runModalForWindow:
       didEnd(modalDelegate, didEndSelector, sheet, ret, contextInfo);
     }
 
+  [sheet close];
   [docWindow setAttachedSheet: nil];
   [sheet setParentWindow: nil];
   [[NSNotificationCenter defaultCenter] 
@@ -2265,9 +2311,17 @@ IF_NO_GC(NSAssert([event retainCount] > 0, NSInternalInconsistencyException));
   /*
    * If target responds to the selector then have it perform it.
    */
-  if (theTarget && [theTarget respondsToSelector: theAction])
+  if (theTarget)
     {
-      return theTarget;
+      if ([theTarget respondsToSelector: theAction])
+        {
+          return theTarget;
+        }
+      else
+        {
+          NSDebugLog(@"Target %@ does not respont to action %@", theTarget, NSStringFromSelector(theAction));
+          return nil;
+        }
     }
   else if ([sender isKindOfClass: [NSToolbarItem class]])
     {
@@ -2304,6 +2358,11 @@ IF_NO_GC(NSAssert([event retainCount] > 0, NSInternalInconsistencyException));
  */
 - (id) targetForAction: (SEL)aSelector
 {
+  if (!aSelector)
+    {
+      return nil;
+    }
+  
   /* During a modal session actions must not be sent to the main window of
    * the application, but rather to the dialog window of the modal session.
    * Note that the modal session window is not necessarily the key window,
@@ -2354,6 +2413,7 @@ image.</p><p>See Also: -applicationIconImage</p>
   NSImage *old_app_icon = _app_icon;
   NSSize miniWindowSize;
   NSSize imageSize;
+  GSDisplayServer *server;
 
   // Ignore attempts to set nil as the icon image.
   if (nil == anImage)
@@ -2364,7 +2424,8 @@ image.</p><p>See Also: -applicationIconImage</p>
   // Use a copy as we change the name and size
   ASSIGNCOPY(_app_icon, anImage);
 
-  miniWindowSize = [GSCurrentServer() iconSize];
+  server = GSCurrentServer();
+  miniWindowSize = server != 0 ? [server iconSize] : NSZeroSize;
   if (miniWindowSize.width <= 0 || miniWindowSize.height <= 0) 
     {
       miniWindowSize = NSMakeSize(48, 48);
@@ -2402,6 +2463,11 @@ image.</p><p>See Also: -applicationIconImage</p>
  */
 - (NSImage*) applicationIconImage
 {
+  if (!_app_icon)
+    {
+      /* load the application icon */
+      [self _loadAppIconImage];
+    }
   return _app_icon;
 }
 
@@ -2414,6 +2480,15 @@ image.</p><p>See Also: -applicationIconImage</p>
   return _app_icon_window;
 }
 
+- (NSDockTile *) dockTile
+{
+  if (!_dock_tile)
+    {
+      _dock_tile = [[NSDockTile alloc] init];
+      [_dock_tile setContentView: [_app_icon_window contentView]];
+    }
+  return _dock_tile;
+}
 /*
  * Hiding and arranging windows
  */
@@ -2439,6 +2514,7 @@ image.</p><p>See Also: -applicationIconImage</p>
 	  NSDictionary  	*info;
 	  NSWindow		*win;
 	  NSEnumerator  	*iter;
+          id<NSMenuItem>  	menuItem;
 
 	  [nc postNotificationName: NSApplicationWillHideNotification
 	                    object: self];
@@ -2457,30 +2533,45 @@ image.</p><p>See Also: -applicationIconImage</p>
 	      [_hidden_main resignMainWindow];
 	    }
 	  
-	  windows_list = GSOrderedWindows();
-	  iter = [windows_list reverseObjectEnumerator];
+          /** Ask the window manager to hide all the application windows for us. 
+              Return whether they have been hidden. */
+          win = [[self mainMenu] window];
+          if ([GSServerForWindow(win) hideApplication: [win windowNumber]] == NO)
+            {
+              windows_list = GSOrderedWindows();
+              iter = [windows_list reverseObjectEnumerator];
 	  
-	  while ((win = [iter nextObject]))
-	    {
-	      if ([win isVisible] == NO && ![win isMiniaturized])
-		{
-		  continue;		/* Already invisible	*/
-		}
-	      if ([win canHide] == NO)
-		{
-		  continue;		/* Not hideable	*/
-		}
-	      if (win == _app_icon_window)
-		{
-		  continue;		/* can't hide the app icon.	*/
-		}
-	      if (_app_is_active == YES && [win hidesOnDeactivate] == YES)
-		{
-		  continue;		/* Will be hidden by deactivation	*/
-		}
-	      [_hidden addObject: win];
-	      [win orderOut: self];
+              while ((win = [iter nextObject]))
+                {
+                  if ([win isVisible] == NO && ![win isMiniaturized])
+                    {
+                      continue;		/* Already invisible	*/
+                    }
+                  if ([win canHide] == NO)
+                    {
+                      continue;		/* Not hideable	*/
+                    }
+                  if (win == _app_icon_window)
+                    {
+                      continue;		/* can't hide the app icon.	*/
+                    }
+                  if (_app_is_active == YES && [win hidesOnDeactivate] == YES)
+                    {
+                      continue;		/* Will be hidden by deactivation	*/
+                    }
+                  [_hidden addObject: win];
+                  [win orderOut: self];
+                }
 	    }
+	  menuItem = [sender isKindOfClass:[NSMenuItem class]]
+		       ? sender
+		       : [_main_menu itemWithTitle:_(@"Hide")];
+	  if (menuItem)
+	    {
+	      [menuItem setAction:@selector(unhide:)];
+	      [menuItem setTitle:_(@"Show")];
+	    }
+
 	  _app_is_hidden = YES;
 	  
 	  if (YES == [[NSUserDefaults standardUserDefaults]
@@ -2543,6 +2634,14 @@ image.</p><p>See Also: -applicationIconImage</p>
  */
 - (void) unhide: (id)sender
 {
+  id<NSMenuItem> menuItem = [sender isKindOfClass:[NSMenuItem class]]
+			      ? sender
+			      : [_main_menu itemWithTitle:_(@"Show")];
+  if (menuItem)
+    {
+      [menuItem setAction:@selector(hide:)];
+      [menuItem setTitle:_(@"Hide")];
+    }
   if (_app_is_hidden)
     {
       [self unhideWithoutActivation];
@@ -3773,28 +3872,36 @@ struct _DelegateWrapper
   return self;
 }
 
+- (NSAppearance*) appearance {
+  return _appearance;
+}
+
+- (void) setAppearance: (NSAppearance*) appearance {
+  ASSIGNCOPY(_appearance, appearance);
+}
+
+- (NSAppearance*) effectiveAppearance {
+  if (_appearance)
+  {
+    return _appearance;
+  }
+  else
+  {
+    return [NSAppearance currentAppearance];
+  }
+}
+
+
 @end /* NSApplication */
 
 
 @implementation	NSApplication (Private)
 
-- (void) _appIconInit
+- (void) _loadAppIconImage
 {
   NSDictionary	*infoDict;
   NSString	*appIconFile;
   NSImage	*image = nil;
-  NSAppIconView	*iv;
-  NSUInteger	mask = NSIconWindowMask;
-  BOOL  	suppress;
-
-  suppress = [[NSUserDefaults standardUserDefaults]
-    boolForKey: @"GSSuppressAppIcon"];
-#if	MINI_ICON
-  if (suppress)
-    {
-      mask = NSMiniaturizableWindowMask;
-    }
-#endif
 
   infoDict = [[NSBundle mainBundle] infoDictionary];
   appIconFile = [infoDict objectForKey: @"NSIcon"];
@@ -3803,7 +3910,7 @@ struct _DelegateWrapper
       image = [NSImage imageNamed: appIconFile];
     }
 
-  // Try to look up the icns file.
+  // Try to look up the icon file.
   appIconFile = [infoDict objectForKey: @"CFBundleIconFile"];
   if (appIconFile && ![appIconFile isEqual: @""])
     {
@@ -3826,7 +3933,23 @@ struct _DelegateWrapper
       [image setName: @"NSApplicationIcon"];
     }
   [self setApplicationIconImage: image];
+}
 
+- (void) _appIconInit
+{
+  NSAppIconView	*iv;
+  NSUInteger	mask = NSIconWindowMask;
+  BOOL  	suppress;
+  
+  suppress = [[NSUserDefaults standardUserDefaults]
+    boolForKey: @"GSSuppressAppIcon"];
+#if	MINI_ICON
+  if (suppress)
+    {
+      mask = NSMiniaturizableWindowMask;
+    }
+#endif
+  
   _app_icon_window = [[NSIconWindow alloc] initWithContentRect: NSZeroRect 
 				styleMask: mask
 				  backing: NSBackingStoreRetained
@@ -3842,12 +3965,13 @@ struct _DelegateWrapper
 
     iconContentRect = GSGetIconFrame(_app_icon_window);
     iconFrame = [_app_icon_window frameRectForContentRect: iconContentRect];
+    iconFrame.origin = [[NSScreen mainScreen] frame].origin;
     iconViewFrame = NSMakeRect(0, 0,
       iconContentRect.size.width, iconContentRect.size.height);
     [_app_icon_window setFrame: iconFrame display: YES];
 
     iv = [[NSAppIconView alloc] initWithFrame: iconViewFrame]; 
-    [iv setImage: _app_icon];
+    [iv setImage: [self applicationIconImage]];
     [_app_icon_window setContentView: iv];
     RELEASE(iv);
   }

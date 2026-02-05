@@ -29,7 +29,7 @@
 
 #ifndef _GNUstep_H_NSOutlineView
 #define _GNUstep_H_NSOutlineView
-#import <GNUstepBase/GSVersionMacros.h>
+#import <AppKit/AppKitDefines.h>
 
 #import <AppKit/NSTableView.h>
 
@@ -38,12 +38,12 @@
 @class NSString;
 @class NSURL;
 
+APPKIT_EXPORT_CLASS
 @interface NSOutlineView : NSTableView
 {
   NSMapTable *_itemDict;
   NSMutableArray *_items;
   NSMutableArray *_expandedItems;
-  NSMutableArray *_selectedItems; /* No longer in use */
   NSMapTable *_levelOfItems;
   BOOL _autoResizesOutlineColumn;
   BOOL _indentationMarkerFollowsCell;
@@ -86,9 +86,9 @@
 @end /* interface of NSOutlineView */
 
 /** 
- * Informal protocol NSOutlineViewDataSource 
+ * protocol NSOutlineViewDataSource 
  */
-@interface NSObject (NSOutlineViewDataSource)
+@protocol NSOutlineViewDataSource
 /**
  * Called to perform drop operation and returns YES if successful,
  * and NO otherwise.
@@ -197,7 +197,7 @@ APPKIT_EXPORT NSString *NSOutlineViewItemWillCollapseNotification;
 /*
  * Methods Implemented by the Delegate
  */
-@interface NSObject (NSOutlineViewDelegate)
+@protocol NSOutlineViewDelegate
 // notification methods
 /**
  * Called after the column has moved.
@@ -275,6 +275,12 @@ shouldSelectTableColumn: (NSTableColumn *)tableColumn;
 - (NSCell *) outlineView: (NSOutlineView *)outlineView 
   dataCellForTableColumn: (NSTableColumn *)aTableColumn
 		    item: (id)item;
+
+- (CGFloat) outlineView: (NSOutlineView *)outlineView
+  heightOfRowByItem: (id)item;
+
+- (CGFloat) outlineView: (NSOutlineView *)outlineView
+  sizeToFitWidthOfColumn: (NSInteger)column;
 #endif
 
 /**
@@ -294,6 +300,23 @@ willDisplayOutlineCell: (id)cell
 #if OS_API_VERSION(MAC_OS_X_VERSION_10_3, GS_API_LATEST)
 - (void) outlineView: (NSOutlineView *)outlineView
   didClickTableColumn: (NSTableColumn *)aTableColumn;
+#endif
+
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_7, GS_API_LATEST)
+- (NSView *) outlineView: (NSOutlineView *)outlineView
+      viewForTableColumn: (NSTableColumn *)aTableColumn
+                    item: (id)item;
+
+- (NSTableRowView *) outlineView: (NSOutlineView *)outlineView
+                  rowViewForItem: (id)item;
+
+- (void) outlineView: (NSOutlineView *)outlineView
+       didAddRowView: (NSTableRowView *)rowView
+              forRow: (NSInteger)rowIndex;
+
+- (void) outlineView: (NSOutlineView *)outlineView
+    didRemoveRowView: (NSTableRowView *)rowView
+              forRow: (NSInteger)rowIndex;
 #endif
 
 @end

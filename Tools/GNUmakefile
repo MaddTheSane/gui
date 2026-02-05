@@ -28,7 +28,7 @@ include ../config.make
 
 include ../Version
 
-SUBPROJECTS = $(BUILD_SPEECH) $(BUILD_SOUND)
+SUBPROJECTS = $(BUILD_SPEECH) $(BUILD_SOUND) $(BUILD_SPEECH_RECOGNIZER)
 TOOL_NAME = make_services set_show_service gopen gclose gcloseall
 SERVICE_NAME = GSspell
 
@@ -50,7 +50,7 @@ include GNUmakefile.preamble
 ifeq ($(CROSS_COMPILING),yes)
   GNUSTEP_MAKE_SERVICES=:
 else
-  GNUSTEP_MAKE_SERVICES=./$(GNUSTEP_OBJ_DIR)/make_services
+  GNUSTEP_MAKE_SERVICES=$(GNUSTEP_OBJ_DIR)/make_services
 endif
 
 include $(GNUSTEP_MAKEFILES)/tool.make

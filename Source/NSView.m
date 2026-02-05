@@ -62,22 +62,29 @@
 #import "AppKit/NSFont.h"
 #import "AppKit/NSGraphics.h"
 #import "AppKit/NSKeyValueBinding.h"
+#import "AppKit/NSLayoutConstraint.h"
 #import "AppKit/NSMenu.h"
 #import "AppKit/NSPasteboard.h"
 #import "AppKit/NSPrintInfo.h"
 #import "AppKit/NSPrintOperation.h"
 #import "AppKit/NSScrollView.h"
+#import "AppKit/NSShadow.h"
 #import "AppKit/NSView.h"
 #import "AppKit/NSWindow.h"
 #import "AppKit/NSWorkspace.h"
+#import "AppKit/NSAppearance.h"
 #import "AppKit/PSOperators.h"
 #import "GNUstepGUI/GSDisplayServer.h"
 #import "GNUstepGUI/GSTrackingRect.h"
 #import "GNUstepGUI/GSNibLoading.h"
 #import "GSToolTips.h"
 #import "GSBindingHelpers.h"
+#import "GSFastEnumeration.h"
 #import "GSGuiPrivate.h"
+#import "GSAutoLayoutEngine.h"
+#import "NSAutoresizingMaskLayoutConstraint.h" 
 #import "NSViewPrivate.h"
+#import "NSWindowPrivate.h"
 
 /*
  * We need a fast array that can store objects without retain/release ...
@@ -99,10 +106,10 @@
 */
 NSView *viewIsPrinting = nil;
 
-/**
-  <unit>
-  <heading>NSView</heading>
+const CGFloat NSViewNoInstrinsicMetric = -1;
+const CGFloat NSViewNoIntrinsicMetric = -1;
 
+/**
   <p>NSView is an abstract class which provides facilities for drawing
   in a window and receiving events.  It is the superclass of many of
   the visual elements of the GUI.</p>
@@ -115,8 +122,6 @@ NSView *viewIsPrinting = nil;
   <p>Subclasses can override -drawRect: in order to
   implement their appearance.  Other methods of NSView and NSResponder
   can also be overridden to handle user generated events.</p>
-
-  </unit>
 */
   
 @implementation NSView
@@ -205,7 +210,6 @@ GSSetDragTypes(NSView* obj, NSArray *types)
  *	Private methods.
  */
 
-
 /*
  *	The [-_invalidateCoordinates] method marks the coordinate mapping
  *	matrices (matrixFromWindow and _matrixToWindow) and the cached visible
@@ -290,9 +294,9 @@ GSSetDragTypes(NSView* obj, NSArray *types)
       _coordinates_valid = YES;
       _rFlags.flipped_view = isFlipped;
 
-      if (!_window)
+      if (!_window && !_super_view)
         {
-          _visibleRect = NSZeroRect;
+          _visibleRect = _bounds;
           [_matrixToWindow makeIdentityMatrix];
           [_matrixFromWindow makeIdentityMatrix];
         }
@@ -562,7 +566,7 @@ GSSetDragTypes(NSView* obj, NSArray *types)
       viewClass = [NSView class];
       rectClass = [GSTrackingRect class];
       NSDebugLLog(@"NSView", @"Initialize NSView class\n");
-      [self setVersion: 1];
+      [self setVersion: 2];
 
       // expose bindings
       [self exposeBinding: NSToolTipBinding];
@@ -631,7 +635,10 @@ GSSetDragTypes(NSView* obj, NSArray *types)
   //_previousKeyView = 0;
 
   _alphaValue = 1.0;
-  
+
+  _needsUpdateConstraints = YES;
+  _translatesAutoresizingMaskIntoConstraints = YES;
+
   return self;
 }
 
@@ -696,7 +703,7 @@ GSSetDragTypes(NSView* obj, NSArray *types)
 		}
 	      if (GSIArrayItemAtIndex(nKV(tmp), 0).obj == self)
 		{
-		  GSIArraySetItemAtIndex(nKV(tmp), (GSIArrayItem)nil, 0);
+		  GSIArraySetItemAtIndex(nKV(tmp), (GSIArrayItem)(id)nil, 0);
 		}
 	    }
 	}
@@ -728,7 +735,7 @@ GSSetDragTypes(NSView* obj, NSArray *types)
 		}
 	      if (GSIArrayItemAtIndex(pKV(tmp), 0).obj == self)
 		{
-		  GSIArraySetItemAtIndex(pKV(tmp), (GSIArrayItem)nil, 0);
+		  GSIArraySetItemAtIndex(pKV(tmp), (GSIArrayItem)(id)nil, 0);
 		}
 	    }
 	}
@@ -761,6 +768,8 @@ GSSetDragTypes(NSView* obj, NSArray *types)
     }
   TEST_RELEASE(_cursor_rects);
   TEST_RELEASE(_tracking_rects);
+  TEST_RELEASE(_shadow);
+  
   [self unregisterDraggedTypes];
   [self releaseGState];
 
@@ -1658,7 +1667,7 @@ static NSSize _computeScale(NSSize fs, NSSize bs)
   return 0.0;
 }
 
-- (void) setFrameCenterRotation:(CGFloat)rot;
+- (void) setFrameCenterRotation:(CGFloat)rot
 {
   // FIXME this is dummy, we don't have layers yet
   // we probably need a Matrix akin frame rotation.
@@ -2816,8 +2825,13 @@ in the main thread.
 
 - (void) _setNeedsDisplayInRect_real: (NSValue *)v
 {
-  NSRect invalidRect = [v rectValue];
+  NSRect invalidRect;
   NSView *currentView = _super_view;
+
+  if (nil == v)
+    return;
+
+  invalidRect = [v rectValue];
 
   /*
    *	Limit to bounds, combine with old _invalidRect, and then check to see
@@ -3647,13 +3661,13 @@ static NSView* findByTag(NSView *view, NSInteger aTag, NSUInteger *level)
 		    }
 		  if (GSIArrayItemAtIndex(pKV(tmp), 0).obj == self)
 		    {
-		      GSIArraySetItemAtIndex(pKV(tmp), (GSIArrayItem)nil, 0);
+		      GSIArraySetItemAtIndex(pKV(tmp), (GSIArrayItem)(id)nil, 0);
 		    }
 		}
 	      /*
 	       * Clear link to the next key view.
 	       */
-	      GSIArraySetItemAtIndex(nKV(self), (GSIArrayItem)nil, 0);
+	      GSIArraySetItemAtIndex(nKV(self), (GSIArrayItem)(id)nil, 0);
 	    }
 	}
       return;
@@ -3667,7 +3681,7 @@ static NSView* findByTag(NSView *view, NSInteger aTag, NSUInteger *level)
        */
       _nextKeyView = NSZoneMalloc(NSDefaultMallocZone(), sizeof(GSIArray_t));
       GSIArrayInitWithZoneAndCapacity(nKV(self), NSDefaultMallocZone(), 1);
-      GSIArrayAddItem(nKV(self), (GSIArrayItem)nil);
+      GSIArrayAddItem(nKV(self), (GSIArrayItem)(id)nil);
     }
   else
     {
@@ -3687,7 +3701,7 @@ static NSView* findByTag(NSView *view, NSInteger aTag, NSUInteger *level)
        */
       aView->_previousKeyView = NSZoneMalloc(NSDefaultMallocZone(), sizeof(GSIArray_t));
       GSIArrayInitWithZoneAndCapacity(pKV(aView), NSDefaultMallocZone(), 1);
-      GSIArrayAddItem(pKV(aView), (GSIArrayItem)nil);
+      GSIArrayAddItem(pKV(aView), (GSIArrayItem)(id)nil);
     }
 
   /*
@@ -3710,7 +3724,7 @@ static NSView* findByTag(NSView *view, NSInteger aTag, NSUInteger *level)
        */
       if (GSIArrayItemAtIndex(nKV(tmp), 0).obj == aView)
 	{
-	  GSIArrayInsertItem(pKV(aView), (GSIArrayItem)nil, 0);
+	  GSIArrayInsertItem(pKV(aView), (GSIArrayItem)(id)nil, 0);
 	}
     }
 
@@ -3735,7 +3749,7 @@ static NSView* findByTag(NSView *view, NSInteger aTag, NSUInteger *level)
 	}
       if (GSIArrayItemAtIndex(pKV(tmp), 0).obj == self)
 	{
-	  GSIArraySetItemAtIndex(pKV(tmp), (GSIArrayItem)nil, 0);
+	  GSIArraySetItemAtIndex(pKV(tmp), (GSIArrayItem)(id)nil, 0);
 	}
     }
 
@@ -4500,12 +4514,10 @@ static NSView* findByTag(NSView *view, NSInteger aTag, NSUInteger *level)
     }
 
   /* Translate to placement */
-  if ((location.x != 0 || location.y != 0) && NSIsEmptyRect(aRect) == YES)
-    DPStranslate(ctxt, location.x, location.y);
-
-  // FIXME: Need to place this correctly. Maybe it isn't needed at all, 
-  // as all drawing happens in displayRectIgnoringOpacity:
-  // [self lockFocusIfCanDrawInContext: ctxt];
+  if (location.x != 0 || location.y != 0)
+    {
+      DPStranslate(ctxt, location.x, location.y);
+    }
 }
 
 - (void) _endSheet
@@ -4600,6 +4612,12 @@ static NSView* findByTag(NSView *view, NSInteger aTag, NSUInteger *level)
         {
           [aCoder encodeConditionalObject: _super_view forKey: @"NSSuperview"];
         }
+
+      // Encode the shadow...
+      if (_shadow != nil)
+	{
+	  [aCoder encodeConditionalObject: _shadow forKey: @"NSViewShadow"];
+	}
     }
   else
     {
@@ -4617,6 +4635,9 @@ static NSView* findByTag(NSView *view, NSInteger aTag, NSUInteger *level)
       [aCoder encodeConditionalObject: [self nextKeyView]];
       [aCoder encodeConditionalObject: [self previousKeyView]];
       [aCoder encodeObject: _sub_views];
+
+      // Encode view effects attributes...
+      [aCoder encodeConditionalObject: [self shadow]];
       NSDebugLLog(@"NSView", @"NSView: finish encoding\n");
     }
 }
@@ -4729,12 +4750,19 @@ static NSView* findByTag(NSView *view, NSInteger aTag, NSUInteger *level)
 	  [self didAddSubview: sub];
 	}
 
+      // Decode the shadow...
+      if ([aDecoder containsValueForKey: @"NSViewShadow"])
+	{
+	  [self setShadow: [aDecoder decodeObjectForKey: @"NSViewShadow"]];
+	}
+
       // the superview...
       //[aDecoder decodeObjectForKey: @"NSSuperview"];
     }
   else
     {
       NSRect	rect;
+      int version = [aDecoder versionForClassName: @"NSView"];
       
       NSDebugLLog(@"NSView", @"NSView: start decoding\n");
 
@@ -4790,6 +4818,12 @@ static NSView* findByTag(NSView *view, NSInteger aTag, NSUInteger *level)
 	  [self didAddSubview: sub];
 	}
       RELEASE(subs);
+
+      // Decode the shadow if this is version 2 or greater...
+      if (version >= 2)
+	{
+	  [self setShadow: [aDecoder decodeObject]];
+	}
     }
 
   return self;
@@ -4933,12 +4967,13 @@ static NSView* findByTag(NSView *view, NSInteger aTag, NSUInteger *level)
 }
 
 /**
- * <p>NSResponder's method, overriden by NSView.</p>
+ * <p>NSResponder's method, overriden by NSView.
+ * </p>
  * <p>If no menu has been set through the use of setMenu:, or 
  *    if a nil value has been set through setMenu:, then the 
  *    value returned by defaultMenu is used. Otherwise this
  *    method returns the menu set through NSResponder.
- * <p>
+ * </p>
  * <p> see [NSResponder -menu], [NSResponder -setMenu:],
  *     [NSView +defaultMenu] and [NSView -menuForEvent:].
  * </p>
@@ -5086,7 +5121,379 @@ static NSView* findByTag(NSView *view, NSInteger aTag, NSUInteger *level)
     }
 }
 
+- (NSViewLayerContentsPlacement) layerContentsPlacement
+{
+  // FIXME (when views have CALayer support)
+  return NSViewLayerContentsPlacementScaleAxesIndependently;
+}
+
+- (void) setLayerContentsPlacement: (NSViewLayerContentsPlacement)placement
+{
+  // FIXME (when views have CALayer support)
+  static BOOL logged = NO;
+  if (!logged)
+    {
+      NSLog(@"warning: stub no-op implementation of -[NSView setLayerContentsPlacement:]");
+      logged = YES;
+    }
+}
+
+- (NSViewLayerContentsRedrawPolicy) layerContentsRedrawPolicy
+{
+  // FIXME (when views have CALayer support)
+  return NSViewLayerContentsRedrawNever;
+}
+
+- (void) setLayerContentsRedrawPolicy: (NSViewLayerContentsRedrawPolicy) pol
+{
+  // FIXME (when views have CALayer support)
+  static BOOL logged = NO;
+  if (!logged)
+    {
+      NSLog(@"warning: stub no-op implementation of -[NSView setLayerContentsRedrawPolicy:]");
+      logged = YES;
+    }
+}
+
+- (NSUserInterfaceLayoutDirection) userInterfaceLayoutDirection
+{
+  // FIXME
+  return NSUserInterfaceLayoutDirectionLeftToRight;
+}
+
+- (void) setUserInterfaceLayoutDirection: (NSUserInterfaceLayoutDirection)dir
+{
+  // FIXME: implement this
+  return;
+}
+
+/**
+* Layout 
+*/
+
+- (void) layout
+{
+  _needsLayout = NO;
+
+  GSAutoLayoutEngine *engine = [self _layoutEngine];
+  if (!engine)
+    {
+      return;
+    }
+
+  NSArray *subviews = [self subviews];
+  FOR_IN (NSView *, subview, subviews)
+    NSRect subviewAlignmentRect =
+        [engine alignmentRectForView: subview];
+    [subview setFrame: subviewAlignmentRect];
+  END_FOR_IN (subviews);
+}
+
+- (void) layoutSubtreeIfNeeded
+{
+  [self updateConstraintsForSubtreeIfNeeded];
+  [self _layoutViewAndSubViews];
+}
+
+- (void) setNeedsLayout: (BOOL) needsLayout
+{
+  if (!needsLayout)
+    {
+      return;
+    }
+  _needsLayout = needsLayout;
+}
+
+- (BOOL) needsLayout
+{
+  return _needsLayout;
+}
+
+- (void) setNeedsUpdateConstraints: (BOOL)needsUpdateConstraints
+{
+  // Calling setNeedsUpdateConstraints with NO should not have an effect
+  if (!needsUpdateConstraints)
+    {
+      return;
+    }
+
+  _needsUpdateConstraints = YES;
+}
+
+- (BOOL) needsUpdateConstraints
+{
+  return _needsUpdateConstraints;
+}
+
+- (void) setTranslatesAutoresizingMaskIntoConstraints: (BOOL)translate
+{
+  _translatesAutoresizingMaskIntoConstraints = translate;
+}
+
+- (BOOL) translatesAutoresizingMaskIntoConstraints
+{
+  return _translatesAutoresizingMaskIntoConstraints;
+}
+
+- (NSLayoutPriority) contentCompressionResistancePriority
+{
+  return _contentCompressionResistancePriority;
+}
+
+- (void) setContentCompressionResistancePriority: (NSLayoutPriority)priority
+{
+  _contentCompressionResistancePriority = priority;
+}
+
+- (NSSize) intrinsicContentSize
+{
+  return NSMakeSize(NSViewNoIntrinsicMetric, NSViewNoIntrinsicMetric);
+}
+
+- (CGFloat) baselineOffsetFromBottom
+{
+  return 0;
+}
+
+- (CGFloat) firstBaselineOffsetFromTop
+{
+  return 0;
+}
+
+/* Implement NSAppearanceCustomization */
+- (NSAppearance*) appearance {
+  return _appearance;
+}
+
+- (void) setAppearance: (NSAppearance*) appearance {
+  ASSIGNCOPY(_appearance, appearance);
+}
+
+- (NSAppearance*) effectiveAppearance {
+  if (_appearance)
+  {
+    return _appearance;
+  }
+  else if ([self superview])
+  {
+    return [[self superview] effectiveAppearance];
+  }
+  else
+  {
+    return [NSAppearance currentAppearance];
+  }
+}
+
+- (void) setIdentifier: (NSUserInterfaceItemIdentifier) identifier
+{
+  ASSIGN(_identifier, identifier);
+}
+
+- (NSUserInterfaceItemIdentifier) identifier
+{
+  return _identifier;
+}
+
 @end
+
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_7, GS_API_LATEST)
+
+@implementation NSView (NSConstraintBasedLayoutCorePrivateMethods)
+// This private setter allows the updateConstraints method to toggle needsUpdateConstraints
+- (void) _setNeedsUpdateConstraints: (BOOL)needsUpdateConstraints
+{
+  _needsUpdateConstraints = needsUpdateConstraints;
+}
+
+- (void) _layoutViewAndSubViews
+{
+  if (_needsLayout)
+    {
+      [self layout];
+    }
+
+  NSArray *subviews = [self subviews];
+  FOR_IN (NSView *, subview, subviews)
+    [subview _layoutViewAndSubViews];
+  END_FOR_IN (subviews);
+}
+
+- (GSAutoLayoutEngine*) _layoutEngine
+{
+  if (![self window])
+    {
+      return nil;
+    }
+
+  return [[self window] _layoutEngine];
+}
+
+- (void) _layoutEngineDidChangeAlignmentRect
+{
+  [[self superview] setNeedsLayout: YES];
+}
+
+- (GSAutoLayoutEngine*) _getOrCreateLayoutEngine
+{
+  if (![self window])
+    {
+      return nil;
+    }
+  if (![[self window] _layoutEngine])
+    {
+      [[self window] _bootstrapAutoLayout];
+    }
+
+  return [[self window] _layoutEngine];
+ }
+
+@end
+
+@implementation NSView (NSConstraintBasedLayoutCoreMethods)
+
+- (void) updateConstraintsForSubtreeIfNeeded
+{
+  NSArray *subviews = [self subviews];
+  FOR_IN (NSView *, subview, subviews)
+    [subview updateConstraintsForSubtreeIfNeeded];
+  END_FOR_IN (subviews);
+
+  if ([self needsUpdateConstraints])
+    {
+      [self updateConstraints];
+    }
+}
+
+- (void) updateConstraints
+{
+  if ([self translatesAutoresizingMaskIntoConstraints] &&
+      [self superview] != nil)
+    {
+      NSArray *autoresizingConstraints = [NSAutoresizingMaskLayoutConstraint
+          constraintsWithAutoresizingMask: [self autoresizingMask]
+                                  subitem: self
+                                    frame: [self frame]
+                                superitem: [self superview]
+                                   bounds: [[self superview] bounds]];
+      [self addConstraints: autoresizingConstraints];
+    }
+
+  [self _setNeedsUpdateConstraints: NO];
+}
+
+- (NSLayoutPriority) contentCompressionResistancePriorityForOrientation: (NSLayoutConstraintOrientation)orientation {
+  if (orientation == NSLayoutConstraintOrientationHorizontal) {
+    return _compressionPriorities.horizontal;
+  } else {
+    return _compressionPriorities.vertical;
+  }
+}
+
+- (void) setContentCompressionResistancePriority: (NSLayoutPriority)priority forOrientation: (NSLayoutConstraintOrientation)orientation {
+    if (orientation == NSLayoutConstraintOrientationHorizontal) {
+      _compressionPriorities.horizontal = priority;
+    } else {
+      _compressionPriorities.vertical = priority;
+    }
+}
+
+- (NSLayoutPriority) contentHuggingPriorityForOrientation: (NSLayoutConstraintOrientation)orientation {
+  if (orientation == NSLayoutConstraintOrientationHorizontal) {
+    return _huggingPriorities.horizontal;
+  } else {
+    return _huggingPriorities.vertical;
+  }
+}
+
+- (void) setContentHuggingPriority: (NSLayoutPriority)priority forOrientation: (NSLayoutConstraintOrientation)orientation
+{
+    if (orientation == NSLayoutConstraintOrientationHorizontal) {
+      _huggingPriorities.horizontal = priority;
+    } else {
+      _huggingPriorities.vertical = priority;
+    }
+}
+
+@end
+
+@implementation NSView (NSConstraintBasedLayoutInstallingConstraints)
+
+- (void) addConstraint: (NSLayoutConstraint *)constraint
+{
+  if (![self _getOrCreateLayoutEngine])
+    {
+      return;
+    }
+
+  [[self _layoutEngine] addConstraint: constraint];
+}
+
+- (void) addConstraints: (NSArray*)constraints
+{
+  if (![self _getOrCreateLayoutEngine])
+    {
+      return;
+    }
+
+  [[self _layoutEngine] addConstraints: constraints];
+}
+
+- (void) removeConstraint: (NSLayoutConstraint *)constraint
+{
+  if (![self _layoutEngine])
+    {
+      return;
+    }
+
+  [[self _layoutEngine] removeConstraint: constraint];
+}
+
+- (void) removeConstraints: (NSArray *)constraints
+{
+  if (![self _layoutEngine])
+    {
+      return;
+    }
+
+  [[self _layoutEngine] removeConstraints: constraints];
+}
+
+- (NSArray*) constraints
+{
+  GSAutoLayoutEngine *engine = [self _layoutEngine];
+  if (!engine)
+    {
+      return [NSArray array];
+    }
+
+  return [engine constraintsForView: self];
+}
+
+@end
+
+#endif
+
+@implementation NSView (__NSViewPrivateMethods__)
+
+/*
+ * This method inserts a view at a given place in the view hierarchy.
+ */
+- (void) _insertSubview: (NSView *)sv atIndex: (NSUInteger)idx
+{
+  [sv _viewWillMoveToWindow: _window];
+  [sv _viewWillMoveToSuperview: self];
+  [sv setNextResponder: self];
+  [_sub_views insertObject: sv atIndex: idx];
+  _rFlags.has_subviews = 1;
+  [sv resetCursorRects];
+  [sv setNeedsDisplay: YES];
+  [sv _viewDidMoveToWindow];
+  [sv viewDidMoveToSuperview];
+  [self didAddSubview: sv];
+}
+
+@end
+
 
 @implementation NSView(KeyViewLoop)
 
@@ -5136,6 +5543,20 @@ cmpFrame(id view1, id view2, void *context)
       nextKeyView = aView;
     }
   [self setNextKeyView: nextKeyView];
+}
+
+@end
+
+@implementation NSView (CoreAnimationSupport)
+
+- (NSShadow *) shadow
+{
+  return _shadow;
+}
+
+- (void) setShadow: (NSShadow *)shadow
+{
+  ASSIGN(_shadow, shadow);
 }
 
 @end

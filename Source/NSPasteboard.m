@@ -553,6 +553,15 @@
 #import "GNUstepGUI/GSServicesManager.h"
 #import "GNUstepGUI/GSPasteboardServer.h"
 
+/*
+ * FIXME
+ * We should learn to handle 
+ * NSPasteboardTypePNG
+ * NSPasteboardTypeSound
+ * NSPasteboardTypeMultipleTextSelection
+ * NSPasteboardTypeTextFinderOptions
+ */
+
 static NSString	*contentsPrefix = @"NSTypedFileContentsPboardType:";
 static NSString	*namePrefix = @"NSTypedFilenamesPboardType:";
 
@@ -1086,16 +1095,7 @@ static  NSMapTable              *mimeMap = NULL;
  */
 + (NSPasteboard*) generalPasteboard
 {
-  static NSPasteboard *generalPboard = nil;
-  NSPasteboard *currentGeneralPboard;
-
-  // call pasteboardWithName: every time, to update server connection if needed
-  currentGeneralPboard = [self pasteboardWithName: NSGeneralPboard];
-  if (currentGeneralPboard != generalPboard)
-    {
-      ASSIGN(generalPboard, currentGeneralPboard);
-    }
-  return generalPboard;
+  return [self pasteboardWithName: NSGeneralPboard];
 }
 
 + (void) initialize
@@ -1999,7 +1999,7 @@ static  NSMapTable              *mimeMap = NULL;
           Protocol      *p = @protocol(GSPasteboardSvr);
 
 	  [conn enableMultipleThreads];
-          [conn setReplyTimeout:2.0];
+          [conn setReplyTimeout: 30.0];
           [(id)the_server setProtocolForProxy: p];
 	  [[NSNotificationCenter defaultCenter]
 	    addObserver: self
@@ -2129,7 +2129,7 @@ description, [cmd stringByDeletingLastPathComponent]);
 	{
 	  ASSIGN(p->target, (id)aTarget);
 	  ASSIGNCOPY(p->name, aName);
-	  NSMapInsert(pasteboards, (void*)p, (void*)p->name);
+	  NSMapInsert(pasteboards, (void*)p->name, (void*)p);
 	  [p autorelease];
 	}
     }
@@ -2285,7 +2285,13 @@ description, [cmd stringByDeletingLastPathComponent]);
  */
 + (NSURL *) URLFromPasteboard: (NSPasteboard *)pasteBoard
 {
-  return [self URLWithString: [pasteBoard stringForType: NSURLPboardType]];
+  NSURL	*u = [self URLWithString: [pasteBoard stringForType: NSURLPboardType]];
+
+  if (nil == u)
+    {
+      u = [self URLWithString: [pasteBoard stringForType: NSStringPboardType]];
+    }
+  return u;
 }
 
 /**
@@ -2293,8 +2299,10 @@ description, [cmd stringByDeletingLastPathComponent]);
  */
 - (void) writeToPasteboard: (NSPasteboard *)pasteBoard
 {
-  [pasteBoard setString: [self absoluteString]
-		forType: NSURLPboardType];
+  NSString	*abs = [self absoluteString];
+
+  [pasteBoard setString: abs forType: NSURLPboardType];
+  [pasteBoard setString: abs forType: NSStringPboardType];
 }
 
 @end

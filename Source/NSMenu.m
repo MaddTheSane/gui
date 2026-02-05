@@ -121,6 +121,7 @@
   NSMenu *_the_menu;
 }
 - (void) _setmenu: (NSMenu *)menu;
+- (NSMenu *) _menu;
 @end
 
 @interface NSMenuView (GNUstepPrivate)
@@ -154,6 +155,10 @@ static BOOL menuBarVisible = YES;
 - (void) _setmenu: (NSMenu *)menu
 {
   _the_menu = menu;
+}
+- (NSMenu *) _menu
+{
+    return _the_menu;
 }
 
 - (BOOL) canBecomeKeyWindow
@@ -256,224 +261,28 @@ static BOOL menuBarVisible = YES;
 
 - (void) _organizeMenu
 {
-  NSString *infoString = _(@"Info");
-  NSString *servicesString = _(@"Services");
-  int i;
-
-  if ([self _isMain])
-    {
-      NSString *appTitle;
-      NSMenu *appMenu;
-      id <NSMenuItem> appItem;
-
-      appTitle = [[[NSBundle mainBundle] localizedInfoDictionary]
-                     objectForKey: @"ApplicationName"];
-      if (nil == appTitle)
-        {
-          appTitle = [[NSProcessInfo processInfo] processName];
-        }
-      appItem = [self itemWithTitle: appTitle];
-      appMenu = [appItem submenu];
-
-      if (_menu.horizontal == YES)
-        {
-          NSMutableArray *itemsToMove;
-	  
-          itemsToMove = [NSMutableArray new];
-          
-          if (appMenu == nil)
-            {
-              [self insertItemWithTitle: appTitle
-                    action: NULL
-                    keyEquivalent: @"" 
-                    atIndex: 0];
-              appItem = [self itemAtIndex: 0];
-              appMenu = [NSMenu new];
-              [self setSubmenu: appMenu forItem: appItem];
-              RELEASE(appMenu);
-            }
-          else
-            {
-              int index = [self indexOfItem: appItem];
-              
-              if (index != 0)
-                {
-                  RETAIN (appItem);
-                  [self removeItemAtIndex: index];
-                  [self insertItem: appItem atIndex: 0];
-                  RELEASE (appItem);
-                }
-            }
-
-	  if ([[GSTheme theme] menuShouldShowIcon])
-	    {
-              NSImage *ti;
-              float bar;
-	      ti = [[NSApp applicationIconImage] copy];
-	      if (ti == nil)
-		{
-		  ti = [[NSImage imageNamed: @"GNUstep"] copy];
-		}
-	      [ti setScalesWhenResized: YES];
-	      bar = [NSMenuView menuBarHeight] - 4;
-	      [ti setSize: NSMakeSize(bar, bar)];
-	      [appItem setImage: ti];
-	      RELEASE(ti);
-	    }
-
-          // Collect all simple items plus "Info" and "Services"
-          for (i = 1; i < [_items count]; i++)
-            {
-              NSMenuItem *anItem = [_items objectAtIndex: i];
-              NSString *title = [anItem title];
-              NSMenu *submenu = [anItem submenu];
-
-              if (submenu == nil)
-                {
-                  [itemsToMove addObject: anItem];
-                }
-              else
-                {
-                  // The menu may not be localized, so we have to 
-                  // check both the English and the local version.
-                  if ([title isEqual: @"Info"] ||
-                      [title isEqual: @"Services"] ||
-                      [title isEqual: infoString] ||
-                      [title isEqual: servicesString])
-                    {
-                      [itemsToMove addObject: anItem];
-                    }
-                }
-            }
-          
-          for (i = 0; i < [itemsToMove count]; i++)
-            {
-              NSMenuItem *anItem = [itemsToMove objectAtIndex: i];
-
-              [self removeItem: anItem];
-              [appMenu addItem: anItem];
-            }
-          
-          RELEASE(itemsToMove);
-        }      
-      else 
-        {
-          [appItem setImage: nil];
-          if (appMenu != nil)
-            {
-              NSArray	*array = [NSArray arrayWithArray: [appMenu itemArray]];
-              /* 
-               * Everything above the Serives menu goes into the info submenu,
-               * the rest into the main menu.
-               */
-              int k = [appMenu indexOfItemWithTitle: servicesString];
-
-              // The menu may not be localized, so we have to 
-              // check both the English and the local version.
-              if (k == -1)
-                k = [appMenu indexOfItemWithTitle: @"Services"];
-
-              if ((k > 0) && ([[array objectAtIndex: k - 1] isSeparatorItem]))
-                k--;
-
-              if (k == 1)
-                {
-                  // Exactly one info item
-                  NSMenuItem *anItem = [array objectAtIndex: 0];
-
-                  [appMenu removeItem: anItem];
-                  [self insertItem: anItem atIndex: 0];
-                }
-              else if (k > 1)
-                {
-                  id <NSMenuItem> infoItem;
-                  NSMenu *infoMenu;
-
-                  // Multiple info items, add a submenu for them
-                  [self insertItemWithTitle: infoString
-                        action: NULL
-                        keyEquivalent: @"" 
-                        atIndex: 0];
-                  infoItem = [self itemAtIndex: 0];
-                  infoMenu = [NSMenu new];
-                  [self setSubmenu: infoMenu forItem: infoItem];
-                  RELEASE(infoMenu);
-
-                  for (i = 0; i < k; i++)
-                    {
-                      NSMenuItem *anItem = [array objectAtIndex: i];
-                  
-                      [appMenu removeItem: anItem];
-                      [infoMenu addItem: anItem];
-                    }
-                }
-              else
-                {
-                  // No service menu, or it is the first item.
-                  // We still look for an info item.
-                  NSMenuItem *anItem = [array objectAtIndex: 0];
-                  NSString *title = [anItem title];
-
-                  // The menu may not be localized, so we have to 
-                  // check both the English and the local version.
-                  if ([title isEqual: @"Info"] ||
-                      [title isEqual: infoString])
-                    {
-                      [appMenu removeItem: anItem];
-                      [self insertItem: anItem atIndex: 0];
-                      k = 1;
-                    }
-                  else
-                    {
-                      k = 0;
-                    }
-                }
-
-              // Copy the remaining entries.
-              for (i = k; i < [array count]; i++)
-                {
-                  NSMenuItem *anItem = [array objectAtIndex: i];
-                  
-                  [appMenu removeItem: anItem];
-                  [self addItem: anItem];
-                }
-
-              [self removeItem: appItem];
-            }
-        }  
-    }
-
-  // recurse over all submenus
-  for (i = 0; i < [_items count]; i++)
-    {
-      NSMenuItem *anItem = [_items objectAtIndex: i];
-      NSMenu *submenu = [anItem submenu];
-
-      if (submenu != nil)
-        {
-          if ([submenu isTransient])
-            {
-              [submenu closeTransient];
-            }
-          [submenu close];
-          [submenu _organizeMenu];
-        }
-    }
-
-  [[self menuRepresentation] update];
-  [self sizeToFit];
+  [[GSTheme theme] organizeMenu: self
+  		   isHorizontal: _menu.horizontal];
 }
 
 - (void) _setGeometry
 {
-  NSPoint        origin;
-
   if (_menu.horizontal == YES)
     {
-      origin = NSMakePoint (0, [[NSScreen mainScreen] frame].size.height
-	- [_aWindow frame].size.height);
-      [_aWindow setFrameOrigin: origin];
-      [_bWindow setFrameOrigin: origin];
+      NSRect screenFrame = [[NSScreen mainScreen] frame];
+
+      NSRect proposedFrame = NSMakeRect(0, 
+		      			screenFrame.size.height -
+		      			[_aWindow frame].size.height +
+					screenFrame.origin.y,
+					screenFrame.size.width,
+					[_aWindow frame].size.height);
+      proposedFrame = [[GSTheme theme] modifyRect: proposedFrame
+	   				  forMenu: self
+	   			     isHorizontal: YES];
+
+      [_aWindow setFrame: proposedFrame display: NO];
+      [_bWindow setFrame: proposedFrame display: NO];
     }
   else
     {
@@ -503,7 +312,7 @@ static BOOL menuBarVisible = YES;
       
       if ((_aWindow != nil) && ([_aWindow screen] != nil))
         {
-          origin = NSMakePoint(0, [[_aWindow screen] visibleFrame].size.height 
+          NSPoint origin = NSMakePoint(0, [[_aWindow screen] visibleFrame].size.height 
                                - [_aWindow frame].size.height);
 	  
           [_aWindow setFrameOrigin: origin];
@@ -574,7 +383,8 @@ static BOOL menuBarVisible = YES;
 
 - (BOOL) _isVisible
 {
-  return [_aWindow isVisible] || [_bWindow isVisible];
+  BOOL isVisible = [_aWindow isVisible] || [_bWindow isVisible];
+  return [[GSTheme theme] proposedVisibility: isVisible forMenu: self];
 }
 
 - (BOOL) _isMain
@@ -840,6 +650,18 @@ static BOOL menuBarVisible = YES;
   else
     [_notifications addObject: removed];
   [self menuChanged];
+}
+
+- (void) removeAllItems
+{
+  NSUInteger count = [_items count];
+  NSUInteger index = 0;
+
+  for (index = 0; index < count; index++)
+    {
+      // always remove item 0 since the index will chane with each removal..
+      [self removeItemAtIndex: 0];
+    }
 }
 
 - (void) itemChanged: (id <NSMenuItem>)anObject
@@ -1120,48 +942,111 @@ static BOOL menuBarVisible = YES;
     }
 }
 
+- (void) _updateMenuWithDelegate
+{
+  if ([_delegate respondsToSelector: @selector(menuNeedsUpdate:)])
+    {
+      [_delegate menuNeedsUpdate: self];
+    }
+  else if ([_delegate respondsToSelector: @selector(numberOfItemsInMenu:)])
+    {
+      NSInteger num;
+
+      num = [_delegate numberOfItemsInMenu: self];
+      if (num > 0)
+        {
+          BOOL cont = YES;
+          NSInteger i = 0;
+          NSInteger curr = [self numberOfItems];
+
+          while (num < curr)
+            {
+              [self removeItemAtIndex: --curr];
+            }
+          while (num > curr)
+            {
+              [self insertItemWithTitle: @""
+                                 action: NULL
+                          keyEquivalent: @""
+                                atIndex: curr++];
+            }
+
+          // FIXME: Should only process the items we display
+          while (cont && i < num)
+            {
+              cont = [_delegate menu: self
+                          updateItem: (NSMenuItem*)[self itemAtIndex: i]
+                             atIndex: i
+                        shouldCancel: NO];
+              i++;
+            }
+        }
+    }
+}
+
+- (void) _autoenableItem: (NSMenuItem*)item
+{
+  SEL	      action = [item action];
+  id	      validator = nil;
+  BOOL	      wasEnabled = [item isEnabled];
+  BOOL	      shouldBeEnabled;
+
+  // If there is no action - there can be no validator for the item.
+  if (action)
+    {
+      validator = [NSApp targetForAction: action
+                                      to: [item target]
+                                    from: item];
+    }
+  else if (_popUpButtonCell != nil)
+    {
+      if (NULL != (action = [_popUpButtonCell action]))
+        {
+          validator = [NSApp targetForAction: action
+                                          to: [_popUpButtonCell target]
+                                        from: [_popUpButtonCell controlView]];
+        }
+    }
+
+  if (validator == nil)
+    {
+      if ((action == NULL) && (_popUpButtonCell != nil))
+        {
+          shouldBeEnabled = YES;
+        }
+      else
+        {
+          shouldBeEnabled = NO;
+        }
+    }
+  else if ([validator respondsToSelector: @selector(validateMenuItem:)])
+    {
+      shouldBeEnabled = [validator validateMenuItem: item];
+    }
+  else if ([validator respondsToSelector: @selector(validateUserInterfaceItem:)])
+    {
+      shouldBeEnabled = [validator validateUserInterfaceItem: item];
+    }
+  else if ([item hasSubmenu] && [[item submenu] numberOfItems] == 0)
+    {
+      shouldBeEnabled = NO;
+    }
+  else
+    {
+      shouldBeEnabled = YES;
+    }
+
+  if (shouldBeEnabled != wasEnabled)
+    {
+      [item setEnabled: shouldBeEnabled];
+    }
+}
+
 - (void) update
 {
   if (_delegate)
     {
-      if ([_delegate respondsToSelector: @selector(menuNeedsUpdate:)])
-        {
-          [_delegate menuNeedsUpdate: self];
-        }
-      else if ([_delegate respondsToSelector: @selector(numberOfItemsInMenu:)])
-        {
-          NSInteger num;
-
-          num = [_delegate numberOfItemsInMenu: self];
-          if (num > 0)
-            {
-              BOOL cont = YES;
-              NSInteger i = 0;
-              NSInteger curr = [self numberOfItems];
-
-              while (num < curr)
-                {
-                  [self removeItemAtIndex: --curr];
-                }
-              while (num > curr)
-                {
-                  [self insertItemWithTitle: @"" 
-                        action: NULL
-                        keyEquivalent: @"" 
-                        atIndex: curr++];
-                }
-
-              // FIXME: Should only process the items we display
-              while (cont && i < num)
-                {
-                  cont = [_delegate menu: self
-                                    updateItem: (NSMenuItem*)[self itemAtIndex: i]
-                                    atIndex: i
-                                    shouldCancel: NO];
-                  i++;
-                }
-            }
-        }
+      [self _updateMenuWithDelegate];
     }
 
   // We use this as a recursion check.
@@ -1181,76 +1066,23 @@ static BOOL menuBarVisible = YES;
 	  for (i = 0; i < count; i++)
 	    {
 	      NSMenuItem *item = [_items objectAtIndex: i];
-	      SEL	      action = [item action];
-	      id	      validator = nil;
-	      BOOL	      wasEnabled = [item isEnabled];
-	      BOOL	      shouldBeEnabled;
 
 	      if ([item hasSubmenu])
                 {
                   [[item submenu] _updateSubmenu];
                 }
 
-	      // If there is no action - there can be no validator for the item.
-	      if (action)
-	        {
-	          validator = [NSApp targetForAction: action 
-				     to: [item target]
-				     from: item];
-	        }
-	      else if (_popUpButtonCell != nil)
-	        {
-	          if (NULL != (action = [_popUpButtonCell action]))
-	            {
-		      validator = [NSApp targetForAction: action
-				         to: [_popUpButtonCell target]
-				         from: [_popUpButtonCell controlView]];
-		    }
-	        }
-
-	      if (validator == nil)
-	        {
-	          if ((action == NULL) && (_popUpButtonCell != nil))
-		    {
-		      shouldBeEnabled = YES;
-		    }
-	          else 
-		    {
-		      shouldBeEnabled = NO;
-		    }
-	        }
-	      else if ([validator
-		         respondsToSelector: @selector(validateMenuItem:)])
-	        {
-	          shouldBeEnabled = [validator validateMenuItem: item];
-	        }
-	      else if ([validator
-		         respondsToSelector: @selector(validateUserInterfaceItem:)])
-	        {
-	          shouldBeEnabled = [validator validateUserInterfaceItem: item];
-	        }
-              else if ([item hasSubmenu] && [[item submenu] numberOfItems] == 0)
-                {
-                  shouldBeEnabled = NO;
-                }
- 	      else
-	        {
-	          shouldBeEnabled = YES;
-	        }
-
-	      if (shouldBeEnabled != wasEnabled)
-	        {
-	          [item setEnabled: shouldBeEnabled];
-	        }
+              [self _autoenableItem: item];
 	    }
           }
 	NS_HANDLER
 	  {
-	    NSLog(@"Error Occurred While Updating Menu %@: %@", [self title], localException);
+	    NSLog(@"Error occurred While Updating Menu %@: %@", [self title], localException);
 	  }
 	NS_ENDHANDLER
       // Reenable displaying of menus
-      [self setMenuChangedMessagesEnabled: YES]; // this will send pending _notifications
+      // this will send pending _notifications
+      [self setMenuChangedMessagesEnabled: YES];
     }
 
   if (_menu.mainMenuChanged)
@@ -1291,7 +1123,7 @@ static BOOL menuBarVisible = YES;
       || ([keyEquivalent length] > 0 && [[NSCharacterSet controlCharacterSet] characterIsMember:[keyEquivalent characterAtIndex:0]]))
     relevantModifiersMask |= NSShiftKeyMask;
 
-  if (![self _isVisible])
+  if (![self _isVisible] && _delegate)
     {
       // Need to enable items as the automatic mechanism is switched off for invisible menus 
       [self update];
@@ -1330,6 +1162,11 @@ static BOOL menuBarVisible = YES;
           if ([[item keyEquivalent] isEqualToString: keyEquivalent] 
             && (modifiers & relevantModifiersMask) == (mask & relevantModifiersMask))
             {
+              if (![self _isVisible] && !_delegate)
+                {
+                  // Need to enable item as the automatic mechanism is switched off for invisible menus
+                  [self _autoenableItem: item];
+                }
               if ([item isEnabled])
                 {
                   [_view performActionWithHighlightingForItemAtIndex: i];
@@ -1545,7 +1382,7 @@ static BOOL menuBarVisible = YES;
   [_view sizeToFit];
   
   menuFrame = [_view frame];
- 
+  
   // Main
   oldWindowFrame = [_aWindow frame];
   newWindowFrame = [NSWindow frameRectForContentRect: menuFrame
@@ -1602,11 +1439,40 @@ static BOOL menuBarVisible = YES;
 }
 
 + (void) popUpContextMenu: (NSMenu *)menu 
-                withEvent: (NSEvent *)event 
+                withEvent: (NSEvent *)event
                   forView: (NSView *)view 
                  withFont: (NSFont *)font
 {
   [menu _rightMouseDisplay: event];
+}
+
+- (void) popUpMenuPositioningItem: (NSMenuItem *)item
+                       atLocation: (NSPoint) point
+                           inView: (NSView *) view
+{
+  NSRect cellFrame = [view convertRect: [view bounds] toView: nil];
+  NSWindow *w = [view window];
+  NSMenuView *mr = [self menuRepresentation];
+  NSUInteger selectedItem = [self indexOfItem: item];
+
+  cellFrame = [[view window] convertRectToScreen: cellFrame];
+  cellFrame.origin.x += point.x;
+  cellFrame.origin.y += point.y;
+  
+  [[GSTheme theme] displayPopUpMenu: mr
+                      withCellFrame: cellFrame
+                  controlViewWindow: w
+                      preferredEdge: NSMinYEdge
+                       selectedItem: selectedItem];
+}
+
+- (void) popUpMenuPositionItem: (NSMenuItem *)item
+                    atLocation: (NSPoint) point
+                        inView: (NSView *) view
+{
+  [self popUpMenuPositioningItem: item 
+                      atLocation: point 
+                          inView: view];
 }
 
 /*
@@ -1786,6 +1652,23 @@ static BOOL menuBarVisible = YES;
           [[supermenu menuRepresentation] setHighlightedItemIndex: -1];
           supermenu->_attachedMenu = nil;
         }
+      [nc addObserver: self
+             selector: @selector(windowDidChangeScreen:)
+                 name: NSWindowDidBecomeKeyNotification
+               object: nil];
+      [nc addObserver: self
+             selector: @selector(windowDidChangeScreen:)
+                 name: NSWindowDidChangeScreenNotification
+               object: nil];
+    }
+  else
+    {
+      [nc removeObserver: self
+                    name: NSWindowDidBecomeKeyNotification
+                  object: nil];
+      [nc removeObserver: self
+                    name: NSWindowDidChangeScreenNotification
+                  object: nil];
     }
   [_view update];
 }
@@ -1833,6 +1716,18 @@ static BOOL menuBarVisible = YES;
       [[GSTheme theme] updateAllWindowsWithMenu: [NSApp mainMenu]];
     }
   [self _showTornOffMenuIfAny: notification];
+
+  if ([NSApp mainMenu] == self)
+    {
+      [nc addObserver: self
+             selector: @selector(windowDidChangeScreen:)
+                 name: NSWindowDidBecomeKeyNotification
+               object: nil];
+      [nc addObserver: self
+             selector: @selector(windowDidChangeScreen:)
+                 name: NSWindowDidChangeScreenNotification
+               object: nil];
+    }
 }
 
 - (void) _showOnActivateApp: (NSNotification*)notification
@@ -1845,6 +1740,38 @@ static BOOL menuBarVisible = YES;
   }
 }
 
+- (void) windowDidChangeScreen: (NSNotification*)notification
+{
+  NSWindow *window = [notification object];
+  NSRect   frame;
+  NSRect   oldScreenFrame;
+  NSRect   newScreenFrame;
+  CGFloat  yOffset;
+
+  if ([window isKindOfClass: [NSPanel class]]
+      || window == _aWindow
+      || [window isKeyWindow] == NO
+      || [_aWindow screen] == [window screen]
+      || [_aWindow isVisible] == NO)
+    {
+      return;
+    }
+
+  oldScreenFrame = [[_aWindow screen] frame];
+  newScreenFrame = [[window screen] frame];
+  frame = [_aWindow frame];
+  
+  // Keep left offset fixed
+  frame.origin.x += newScreenFrame.origin.x - oldScreenFrame.origin.x;
+
+  // Keep top offset fixed
+  yOffset = NSMaxY(oldScreenFrame) - NSMaxY(frame);
+  frame.origin.y = NSMaxY(newScreenFrame) - yOffset - frame.size.height;
+  
+  // setFrame: changes _screen value.
+  [self nestedSetFrameOrigin: frame.origin];
+}
+
 - (BOOL) isTransient
 {
   return _menu.transient;
@@ -1855,7 +1782,15 @@ static BOOL menuBarVisible = YES;
   NSWindow *window;
 
   window = [self window];
-  return !NSContainsRect([[window screen] visibleFrame], [window frame]);
+  if ((nil != window) && (nil != [window screen]))
+    {
+      return !NSContainsRect([[window screen] visibleFrame], [window frame]);
+    }
+  else
+    {
+      NSLog(@"Menu has no window %@ or screen %@", window, [window screen]);
+      return YES;
+    }
 }
 
 - (void) _performMenuClose: (id)sender
@@ -2244,9 +2179,9 @@ static BOOL menuBarVisible = YES;
 	{
 	  [_aWindow setLevel: NSPopUpMenuWindowLevel];
 	  [_bWindow setLevel: NSPopUpMenuWindowLevel];
+          [self update];
 	}
     }
-  [self update];
 }
 
 - (NSString*) description

@@ -48,7 +48,9 @@
 #import "GNUstepGUI/GSPrinting.h"
 #import "GSCUPSPrinter.h"
 
+#undef __BLOCKS__
 #include <cups/cups.h>
+#include <cups/ppd.h>
 
 
 NSString *GSCUPSDummyPrinterName = @"GSCUPSDummyPrinter";
@@ -67,10 +69,10 @@ NSString *GSCUPSDummyPrinterName = @"GSCUPSDummyPrinter";
     }
 }
 
-
-+(id) allocWithZone: (NSZone*) zone
+// Required because the super class redefines the default
++ (id) allocWithZone: (NSZone*)z
 {
-  return NSAllocateObject(self, 0, zone);
+  return NSAllocateObject (self, 0, z);
 }
 
 //

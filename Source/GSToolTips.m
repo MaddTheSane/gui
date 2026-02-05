@@ -174,7 +174,7 @@
 - (id) initWithContentRect: (NSRect)contentRect
                  styleMask: (NSUInteger)aStyle
                    backing: (NSBackingStoreType)bufferingType
-                     defer: (BOOL)flag;
+                     defer: (BOOL)flag
 {
   self = [super initWithContentRect: contentRect
                           styleMask: aStyle
@@ -182,7 +182,7 @@
                               defer: flag];
   if (self)
     {
-      [self setContentView: [[[GSTTView alloc] initWithFrame: contentRect] autorelease]];
+      [self setContentView: AUTORELEASE([[GSTTView alloc] initWithFrame: contentRect])];
     }
   return self;
 }
@@ -236,8 +236,7 @@ static BOOL		restoreMouseMoved;
 					 backing: NSBackingStoreRetained
 					   defer: YES];
     
-  [window setBackgroundColor:
-    [NSColor colorWithDeviceRed: 1.0 green: 1.0 blue: 0.90 alpha: 1.0]];
+  [window setBackgroundColor: [NSColor toolTipColor]];
   [window setReleasedWhenClosed: NO];
   [window setExcludedFromWindowsMenu: YES];
   [window setLevel: NSPopUpMenuWindowLevel];
@@ -453,7 +452,7 @@ static BOOL		restoreMouseMoved;
     {
       ((NSViewPtr)view)->_rFlags.has_trkrects = 0;
     }
-  [indexes release];
+  RELEASE(indexes);
 }
 
 - (void) removeToolTip: (NSToolTipTag)tag
@@ -638,6 +637,8 @@ static BOOL		restoreMouseMoved;
   attributes = [NSMutableDictionary dictionary];
   [attributes setObject: [NSFont toolTipsFontOfSize: size]
 		 forKey: NSFontAttributeName];
+  [attributes setObject: [NSColor toolTipTextColor]
+                  forKey: NSForegroundColorAttributeName];
   toolTipText =
     [[NSAttributedString alloc] initWithString: toolTipString
 				    attributes: attributes];
@@ -648,10 +649,12 @@ static BOOL		restoreMouseMoved;
       rect = [toolTipText boundingRectWithSize: NSMakeSize(300, 1e7)
                                        options: 0];
       textSize = rect.size;
-      // This extra pixel is needed, otherwise the last line gets cut off.
-      textSize.height += 1;
     }
 
+  // Need to fudge the result just a bit due to occasionally cutoff characters...
+  textSize.width += 1;
+  textSize.height += 1;
+  
   /* Create window just off the current mouse position
    * Constrain it to be on screen, shrinking if necessary.
    */

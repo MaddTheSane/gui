@@ -35,7 +35,7 @@
 
 #ifndef _GNUstep_H_NSWindow
 #define _GNUstep_H_NSWindow
-#import <GNUstepBase/GSVersionMacros.h>
+#import <AppKit/AppKitDefines.h>
 
 #import <AppKit/NSGraphicsContext.h>
 #import <AppKit/NSResponder.h>
@@ -62,8 +62,10 @@
 @class NSView;
 @class NSWindowController;
 @class NSCachedImageRep;
+@class NSViewController;
 
 @class GSWindowDecorationView;
+@class GSAutoLayoutEngine;
 
 /*
  * Window levels are taken from MacOS-X
@@ -76,7 +78,7 @@
 enum {
   NSDesktopWindowLevel = -1000,	/* GNUstep addition	*/ // 2
   NSNormalWindowLevel = 0, // 3
-  NSFloatingWindowLevel = 3, // 4
+  NSFloatingWindowLevel = 2, // 4
   NSSubmenuWindowLevel = 3, // 5
   NSTornOffMenuWindowLevel = 3, // 5
   NSMainMenuWindowLevel = 20, // 7
@@ -87,25 +89,62 @@ enum {
   NSScreenSaverWindowLevel = 1000  // 12
 };
 
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_9, GS_API_LATEST)
+  typedef NSInteger NSModalResponse;
+  enum {
+    NSModalResponseOK = 1,
+    NSModalResponseCancel = 0,
+    NSModalResponseStop = -1000,
+    NSModalResponseAbort = -1001,
+    NSModalResponseContinue = -1002,
+    NSAlertFirstButtonReturn = 1000,
+    NSAlertSecondButtonReturn = 1001,
+    NSAlertThirdButtonReturn = 1002,
+  };
+  DEFINE_BLOCK_TYPE(GSNSWindowDidEndSheetCallbackBlock, void, NSModalResponse returnCode);
+#endif
+
 enum {
   NSBorderlessWindowMask = 0,
   NSTitledWindowMask = 1,
-  NSClosableWindowMask = 2,
-  NSMiniaturizableWindowMask = 4,
-  NSResizableWindowMask = 8,
+  NSClosableWindowMask = 1 << 1,
+  NSMiniaturizableWindowMask = 1 << 2,
+  NSResizableWindowMask = 1 << 3,
 #if OS_API_VERSION(MAC_OS_X_VERSION_10_2, GS_API_LATEST)
-  NSTexturedBackgroundWindowMask = 256,
+  NSTexturedBackgroundWindowMask = 1 << 8,
 #endif 
 #if OS_API_VERSION(MAC_OS_X_VERSION_10_4, GS_API_LATEST)
-  NSUnscaledWindowMask = 2048,
-  NSUnifiedTitleAndToolbarWindowMask = 4096,
+  NSUnscaledWindowMask = 1 << 11,
+  NSUnifiedTitleAndToolbarWindowMask = 1 << 12,
+#endif
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_6, GS_API_LATEST)
+  NSWindowStyleMaskHUDWindow = 1 << 13,
 #endif
 #if OS_API_VERSION(MAC_OS_X_VERSION_10_7, GS_API_LATEST)
-  NSFullScreenWindowMask = 16384,
+  NSFullScreenWindowMask = 1 << 14,
+#endif
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_10, GS_API_LATEST)
+  NSFullSizeContentViewWindowMask = 1 << 15,
+#endif
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_12, GS_API_LATEST)
+  NSWindowStyleMaskBorderless = NSBorderlessWindowMask,
+  NSWindowStyleMaskTitled = NSTitledWindowMask,
+  NSWindowStyleMaskClosable = NSClosableWindowMask,
+  NSWindowStyleMaskMiniaturizable = NSMiniaturizableWindowMask,
+  NSWindowStyleMaskResizable = NSResizableWindowMask,
+  NSWindowStyleMaskUtilityWindow = 1 << 4,
+  NSWindowStyleMaskDocModalWindow = 1 << 6,
+  // Specifies that a panel that does not activate the owning application
+  NSWindowStyleMaskNonactivatingPanel = 1 << 7,
+  NSWindowStyleMaskTexturedBackground = NSTexturedBackgroundWindowMask,
+  NSWindowStyleMaskUnifiedTitleAndToolbar = NSUnifiedTitleAndToolbarWindowMask,
+  NSWindowStyleMaskFullScreen = NSFullScreenWindowMask,
+  NSWindowStyleMaskFullSizeContentView = NSFullSizeContentViewWindowMask,
 #endif
   NSIconWindowMask = 64,	/* GNUstep extension - app icon window	*/
   NSMiniWindowMask = 128	/* GNUstep extension - miniwindows	*/
 };
+typedef NSUInteger NSWindowStyleMask;
 
 #if OS_API_VERSION(MAC_OS_X_VERSION_10_5, GS_API_LATEST)
 enum {
@@ -131,6 +170,13 @@ enum {
   NSWindowCollectionBehaviorFullScreenAuxiliary = 1 << 8
 };
 #endif
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_11, GS_API_LATEST)
+enum
+{
+  NSWindowCollectionBehaviorFullScreenAllowsTiling = 1 << 11,
+  NSWindowCollectionBehaviorFullScreenDisallowsTiling = 1 << 12
+};
+#endif
 typedef NSUInteger NSWindowCollectionBehavior;
 
 enum _NSSelectionDirection {
@@ -150,7 +196,7 @@ enum _NSWindowButton
   NSWindowDocumentIconButton
 };
 typedef NSUInteger NSWindowButton;
-#endif 
+#endif
 
 APPKIT_EXPORT NSSize NSIconSize;
 APPKIT_EXPORT NSSize NSTokenSize;
@@ -190,6 +236,7 @@ APPKIT_EXPORT NSSize NSTokenSize;
  * -convertBaseToScreen: and -convertScreenToBase: methods.
  * </p>
  */
+APPKIT_EXPORT_CLASS
 @interface NSWindow : NSResponder <NSCoding>
 {
   NSRect        _frame;
@@ -202,6 +249,7 @@ APPKIT_EXPORT NSSize NSTokenSize;
   id            _firstResponder;
   id            _futureFirstResponder;
   NSView        *_initialFirstResponder;
+  GSAutoLayoutEngine *_layoutEngine;
 PACKAGE_SCOPE
   id            _delegate;
 @protected
@@ -299,6 +347,14 @@ PACKAGE_SCOPE
 /*
  * Computing frame and content rectangles
  */
+
+/**
+ * Returns a window with the view of the specified viewController as it's
+ * content view.  The window is resizable, titled, closable, and miniaturizable.
+ */
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_10, GS_API_LATEST)
++ (instancetype) windowWithContentViewController: (NSViewController *)viewController;
+#endif
 
 /**
  * Returns the rectangle which would be used for the content view of
@@ -492,6 +548,7 @@ PACKAGE_SCOPE
 - (void) orderWindow: (NSWindowOrderingMode)place
 	  relativeTo: (NSInteger)otherWin;
 - (BOOL) isVisible;
+- (void) setIsVisible: (BOOL)flag;
 - (NSInteger) level;
 - (void) setLevel: (NSInteger)newLevel;
 
@@ -805,6 +862,30 @@ PACKAGE_SCOPE
 #if OS_API_VERSION(MAC_OS_X_VERSION_10_4, GS_API_LATEST)
 - (BOOL) displaysWhenScreenProfileChanges;
 - (void) setDisplaysWhenScreenProfileChanges: (BOOL)flag;
+#endif
+
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_9, GS_API_LATEST)
+#if GS_HAS_DECLARED_PROPERTIES
+@property (readonly) NSWindow *sheetParent;
+#else
+- (NSWindow *) sheetParent;
+#endif
+
+- (void)beginSheet:(NSWindow *)sheet
+ completionHandler:(GSNSWindowDidEndSheetCallbackBlock)handler;
+#endif
+
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_7, GS_API_LATEST)
+#if GS_HAS_DECLARED_PROPERTIES
+@property (readonly) CGFloat backingScaleFactor;
+#else
+- (CGFloat) backingScaleFactor;
+#endif
+#endif
+
+#if OS_API_VERSION(MAC_OS_X_VERSION_10_5, GS_API_LATEST)
++ (NSInteger)windowNumberAtPoint:(NSPoint)point
+     belowWindowWithWindowNumber:(NSInteger)windowNumber;
 #endif
 
 @end
