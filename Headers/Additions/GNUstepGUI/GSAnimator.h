@@ -49,9 +49,14 @@
 #ifndef _GNUstep_H_GSAnimator_
 #define _GNUstep_H_GSAnimator_
 
+#import <Foundation/NSObject.h>
 #import <Foundation/NSDate.h>
 #import <Foundation/NSObject.h>
 #import <Foundation/NSZone.h>
+
+#ifndef APPKIT_EXPORT_CLASS
+#define APPKIT_EXPORT_CLASS __attribute__ ((visibility("default")))
+#endif
 
 @class NSArray;
 @class NSEvent;
@@ -63,7 +68,7 @@
  * Protocol that needs to be adopted by classes that want to
  * be animated by a GSAnimator.
  */
-@protocol GSAnimation
+@protocol GSAnimation <NSObject>
 /** Call back method indicating that the GSAnimator did start the
  * animation loop. */
 - (void) animatorDidStart;

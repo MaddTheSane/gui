@@ -34,6 +34,10 @@
 #import <AppKit/AppKitDefines.h>
 #import <Foundation/Foundation.h>
 
+#ifndef APPKIT_EXPORT_CLASS
+#define APPKIT_EXPORT_CLASS __attribute__ ((visibility("default")))
+#endif
+
 @class GSXibElement;
 
 APPKIT_EXPORT_CLASS

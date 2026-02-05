@@ -48,13 +48,17 @@
 @class NSMutableArray;
 @class NSMutableDictionary;
 
+#ifndef APPKIT_EXPORT_CLASS
+#define APPKIT_EXPORT_CLASS __attribute__ ((visibility("default")))
+#endif
+
 @class GMArchiver;
 @class GMUnarchiver;
 
 
 /* The objects that want to be archived the following protocol. */
 
-@protocol ModelCoding
+@protocol ModelCoding <NSObject>
 
 /* These methods are much like those from the NSCoding protocol.
    The difference is that you can specify names for the instance

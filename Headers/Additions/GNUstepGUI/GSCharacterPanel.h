@@ -53,6 +53,10 @@
 
 #import <AppKit/NSPanel.h>
 
+#ifndef APPKIT_EXPORT_CLASS
+#define APPKIT_EXPORT_CLASS __attribute__ ((visibility("default")))
+#endif
+
 @class NSTableView;
 @class NSSearchField;
 @class NSIndexSet;

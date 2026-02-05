@@ -33,6 +33,10 @@
 #import <Foundation/NSObject.h>
 #import <Foundation/NSZone.h>
 
+#ifndef APPKIT_EXPORT_CLASS
+#define APPKIT_EXPORT_CLASS __attribute__ ((visibility("default")))
+#endif
+
 @class NSArray;
 @class NSData;
 @class NSDictionary;

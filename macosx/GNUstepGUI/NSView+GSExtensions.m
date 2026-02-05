@@ -34,23 +34,23 @@
 	 * This must be first because it invokes -resignFirstResponder:,
 	 * which assumes the view is still in the view hierarchy
 	 */
-	for (view = [_window firstResponder];
+	for (view = [self.window firstResponder];
 		 view != nil && [view respondsToSelector: @selector(superview)];
 		 view = [view superview])
 	{
 		if (view == aView)
 		{
-	  [_window makeFirstResponder: _window];
-	  break;
+			[self.window makeFirstResponder: self.window];
+			break;
 		}
 	}
 	[self willRemoveSubview: aView];
-	aView->_superview = nil;
+	[aView removeFromSuperviewWithoutNeedingDisplay];
 	[aView viewWillMoveToWindow: nil];
 	[aView viewWillMoveToSuperview: nil];
 	[aView setNextResponder: nil];
 	RETAIN(aView);
-	[_subviews removeObjectIdenticalTo: aView];
+//	[self.subviews removeObjectIdenticalTo: aView];
 	[aView setNeedsDisplay: NO];
 	[aView viewDidMoveToWindow];
 	[aView viewDidMoveToSuperview];

@@ -32,7 +32,11 @@
 
 #import <AppKit/NSView.h>
 
-/** 
+#ifndef APPKIT_EXPORT_CLASS
+#define APPKIT_EXPORT_CLASS __attribute__ ((visibility("default")))
+#endif
+
+/**
   <unit>
   <heading>GSTable</heading>
  

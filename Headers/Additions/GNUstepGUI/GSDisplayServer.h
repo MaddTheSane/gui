@@ -36,6 +36,10 @@
 #import <AppKit/NSDragging.h>
 #import <AppKit/NSGraphicsContext.h>
 
+#ifndef APPKIT_EXPORT_CLASS
+#define APPKIT_EXPORT_CLASS __attribute__ ((visibility("default")))
+#endif
+
 @class NSArray;
 @class NSCountedSet;
 @class NSDictionary;

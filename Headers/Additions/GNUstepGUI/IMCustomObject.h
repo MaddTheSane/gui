@@ -34,6 +34,9 @@
 
 #ifndef GNUSTEP
 #import <AppKit/AppKit.h>
+#ifndef APPKIT_EXPORT_CLASS
+#define APPKIT_EXPORT_CLASS __attribute__ ((visibility("default")))
+#endif
 #else
 #import <Foundation/NSObject.h>
 #import <AppKit/NSView.h>

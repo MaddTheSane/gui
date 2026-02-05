@@ -31,6 +31,9 @@
 #import <Foundation/NSObject.h>
 #import "GNUstepGUI/GSNibContainer.h"
 
+#ifndef APPKIT_EXPORT_CLASS
+#define APPKIT_EXPORT_CLASS __attribute__ ((visibility("default")))
+#endif
 
 // version of the nib container and the templates.
 #define GNUSTEP_NIB_VERSION 2
